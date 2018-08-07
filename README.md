@@ -1,2 +1,3 @@
-# cdi
-Axon Framework CDI Support
+# Axon Framework CDI Support
+
+Coming soon, watch this space.
