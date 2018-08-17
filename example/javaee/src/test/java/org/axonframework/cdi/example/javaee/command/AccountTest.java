@@ -1,4 +1,4 @@
-package org.axonframework.cdi.example.wildfly.command;
+package org.axonframework.cdi.example.javaee.command;
 
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.junit.Test;

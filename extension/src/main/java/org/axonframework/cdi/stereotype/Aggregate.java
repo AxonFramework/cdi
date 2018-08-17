@@ -7,6 +7,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import javax.enterprise.inject.Stereotype;
 
 /**
  * Annotation that informs Axon that a given {@link Named} is an aggregate
@@ -14,9 +15,9 @@ import java.lang.annotation.Target;
  *
  * @author Simon Zambrovski, Holisticon AG
  */
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Named
+@Stereotype
 @AggregateRoot
 public @interface Aggregate {
 

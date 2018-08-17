@@ -1,4 +1,4 @@
-package org.axonframework.cdi.example.wildfly.query;
+package org.axonframework.cdi.example.javaee.query;
 
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
@@ -14,6 +14,6 @@ public class GenericEventListener {
 
     @EventHandler
     public void on(Object event) {
-        logger.log(Level.INFO, "Event received {0}.", event);
+        logger.log(Level.INFO, "Received: {0}.", event);
     }
 }

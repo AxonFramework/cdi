@@ -1,6 +1,7 @@
-package org.axonframework.cdi.example.wildfly.command;
+package org.axonframework.cdi.example.javaee.command;
 
 import java.lang.invoke.MethodHandles;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.axonframework.cdi.stereotype.Aggregate;
 import org.axonframework.commandhandling.CommandHandler;
@@ -24,7 +25,7 @@ public class Account {
 
     @CommandHandler
     public Account(final CreateAccountCommand command) {
-        logger.info("Create account command handled.");
+        logger.log(Level.INFO, "Handling: {0}.", command);
 
         apply(new AccountCreatedEvent(command.getAccountId(),
                 command.getOverdraftLimit()));
@@ -32,7 +33,7 @@ public class Account {
 
     @EventSourcingHandler
     public void on(AccountCreatedEvent event) {
-        logger.info("Applying account created event.");
+        logger.log(Level.INFO, "Applying: {0}.", event);
 
         this.accountId = event.getAccountId();
         this.overdraftLimit = event.getOverdraftLimit();

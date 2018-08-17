@@ -1,16 +1,16 @@
-package org.axonframework.cdi.example.wildfly;
+package org.axonframework.cdi.example.javaee;
 
-import org.axonframework.cdi.example.wildfly.command.CreateAccountCommand;
 import java.lang.invoke.MethodHandles;
+import java.util.UUID;
 import java.util.logging.Logger;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.interceptors.EventLoggingInterceptor;
-
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+import org.axonframework.cdi.example.javaee.command.CreateAccountCommand;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.interceptors.EventLoggingInterceptor;
 
 @Singleton
 @Startup
@@ -27,10 +27,11 @@ public class AccountApplication {
 
     @PostConstruct
     public void run() {
-        logger.info("Initializing CDI application.");
+        logger.info("Initializing Account application.");
 
         eventBus.registerDispatchInterceptor(new EventLoggingInterceptor());
 
-        commandGateway.send(new CreateAccountCommand("4711", 100.00));
+        commandGateway.send(new CreateAccountCommand(
+                UUID.randomUUID().toString(), 100.00));
     }
 }

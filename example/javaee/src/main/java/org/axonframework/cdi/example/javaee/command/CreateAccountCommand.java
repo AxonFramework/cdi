@@ -1,4 +1,4 @@
-package org.axonframework.cdi.example.wildfly.command;
+package org.axonframework.cdi.example.javaee.command;
 
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 
@@ -19,5 +19,11 @@ public class CreateAccountCommand {
 
     public Double getOverdraftLimit() {
         return overdraftLimit;
+    }
+
+    @Override
+    public String toString() {
+        return "Create Account Command with accountId=" + accountId
+                + ", overdraftLimit=" + overdraftLimit;
     }
 }

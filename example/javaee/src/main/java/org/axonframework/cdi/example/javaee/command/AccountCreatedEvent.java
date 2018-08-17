@@ -1,4 +1,4 @@
-package org.axonframework.cdi.example.wildfly.command;
+package org.axonframework.cdi.example.javaee.command;
 
 public class AccountCreatedEvent {
 
