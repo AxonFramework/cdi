@@ -27,7 +27,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.cdi.transaction.LoggingTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
@@ -61,6 +60,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
     private Producer<MessageConsumer> messageConsumerProducer;
+    // TODO: this should be a list of producers
     private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
@@ -361,13 +361,6 @@ public class AxonCdiExtension implements Extension {
                     transactionManager.getClass().getSimpleName());
 
             configurer.configureTransactionManager(c -> transactionManager);
-        } else {
-            // TODO Double-check whether this is the right thing to do.
-
-            logger.warn("No transaction manager found, using Logging Transaction Manager.");
-
-            configurer.configureTransactionManager(
-                    c -> LoggingTransactionManager.INSTANCE);
         }
 
         // Command bus registration.
@@ -453,7 +446,7 @@ public class AxonCdiExtension implements Extension {
         }
 
         // Register aggregates.
-        aggregates.stream().forEach(aggregate -> {
+        aggregates.forEach(aggregate -> {
             logger.info("Registering aggregate {}", aggregate.getSimpleName());
             configurer.configureAggregate(aggregate);
         });
@@ -496,6 +489,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
-        messageProcessorSubscriptions.stream().forEach(mps -> mps.cancel());
+        messageProcessorSubscriptions.forEach(Registration::cancel);
     }
 }
