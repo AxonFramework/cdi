@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AxonCdiExtension implements Extension {
 
-    private final static Logger logger = LoggerFactory.getLogger(
+    private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
 
     private final List<Class<?>> aggregates = new ArrayList<>();
@@ -122,8 +122,6 @@ public class AxonCdiExtension implements Extension {
     <T> void processTransactionManagerProducer(
             @Observes final ProcessProducer<T, TransactionManager> processProducer,
             final BeanManager beanManager) {
-        // TODO if not found, we should try to look up the transaction manager
-        // from the environment.
         // TODO Handle multiple producer definitions.
 
         logger.debug("Producer for TransactionManager found: {}.",

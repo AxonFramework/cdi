@@ -1,136 +1,64 @@
 package org.axonframework.cdi.transaction;
 
-import java.lang.invoke.MethodHandles;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.persistence.EntityManager;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.jta.JtaTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 /**
- * Container transaction manager.
- * <p>
- * Uses provided entity manager and accesses JTA UserTransaction from JNDI
- * provided by the container.
- * </p>
+ * TransactionManager implementation that uses a
+ * {@link org.springframework.transaction.JtaTransactionManager} as underlying
+ * transaction manager.
  *
- * @author Simon Zambrovski
+ * @author Allard Buijze
  */
-// TODO Check if this is really needed as part of the API or if the user simply
-// supplies a JNDI entry and the entity manager. How is it done in the Spring
-// support? A minor concern.
 public class ContainerTransactionManager implements TransactionManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(
-            MethodHandles.lookup().lookupClass());
+    private final JtaTransactionManager transactionManager;
 
-    private final EntityManager entityManager;
-    private final String userTransactionJndiName;
-
-    /**
-     * Constructs the transaction manager.
-     *
-     * @param entityManager entity manager to use.
-     * @param userTransactionJndiName JNDI address of the USerTransaction object
-     * provided by the container.
-     */
-    public ContainerTransactionManager(final EntityManager entityManager,
-            final String userTransactionJndiName) {
-        this.entityManager = entityManager;
-        this.userTransactionJndiName = userTransactionJndiName;
+    public ContainerTransactionManager() {
+        this.transactionManager = new JtaTransactionManager();
     }
 
     @Override
     public Transaction startTransaction() {
-
-        // Start with empty logging transaction.
-        Transaction startedTransaction = LoggingTransactionManager.EMPTY;
-
-        try {
-            final UserTransaction transaction
-                    = (UserTransaction) new InitialContext().lookup(
-                            this.userTransactionJndiName);
-
-            if (transaction == null) {
-                logger.warn("No transaction is available.");
-
-                return startedTransaction;
+        TransactionStatus status = transactionManager.getTransaction(
+                new DefaultTransactionDefinition());
+        return new Transaction() {
+            @Override
+            public void commit() {
+                commitTransaction(status);
             }
 
-            if (transaction.getStatus() != Status.STATUS_ACTIVE) {
-                logger.trace("Creating a new transaction.");
-
-                transaction.begin();
-            } else {
-                logger.trace("Re-using running transaction with status {}.",
-                        transaction.getStatus());
+            @Override
+            public void rollback() {
+                rollbackTransaction(status);
             }
+        };
+    }
 
-            // Join transaction.
-            if (!this.entityManager.isJoinedToTransaction()) {
-                this.entityManager.joinTransaction();
-            }
-
-            startedTransaction = new Transaction() {
-                @Override
-                public void commit() {
-                    try {
-                        switch (transaction.getStatus()) {
-                            case Status.STATUS_ACTIVE:
-                                logger.trace("Committing transaction.");
-                                transaction.commit();
-                                break;
-                            case Status.STATUS_MARKED_ROLLBACK:
-                                logger.warn("Transaction has been marked as rollback-only.");
-                                rollback();
-                                break;
-                            default:
-                                logger.warn("Ignored commit of non-active transaction in status {}.",
-                                        transaction.getStatus());
-                                break;
-                        }
-                    } catch (final IllegalStateException | SystemException
-                            | SecurityException | RollbackException
-                            | HeuristicMixedException
-                            | HeuristicRollbackException e) {
-                        logger.error("Error committing transaction.", e);
-                    }
-                }
-
-                @Override
-                public void rollback() {
-                    try {
-                        switch (transaction.getStatus()) {
-                            case Status.STATUS_ACTIVE:
-                            // Intended no break.
-                            case Status.STATUS_MARKED_ROLLBACK:
-                                logger.trace("Rolling transaction back.");
-                                transaction.rollback();
-                                break;
-                            default:
-                                logger.warn("Ignored rollback of non-active transaction in status {}.",
-                                        transaction.getStatus());
-                                break;
-                        }
-                    } catch (final IllegalStateException | SystemException
-                            | SecurityException e) {
-                        logger.error("Error rolling transaction back.", e);
-                    }
-                }
-            };
-        } catch (final NotSupportedException | SystemException | NamingException e) {
-            logger.error("Error retrieving user transaction.", e);
+    /**
+     * Commits the transaction with given {@code status} if the transaction is
+     * new and not completed.
+     *
+     * @param status The status of the transaction to commit
+     */
+    protected void commitTransaction(TransactionStatus status) {
+        if (status.isNewTransaction() && !status.isCompleted()) {
+            transactionManager.commit(status);
         }
+    }
 
-        return startedTransaction;
+    /**
+     * Rolls back the transaction with given {@code status} if the transaction
+     * is new and not completed.
+     *
+     * @param status The status of the transaction to roll back
+     */
+    protected void rollbackTransaction(TransactionStatus status) {
+        if (status.isNewTransaction() && !status.isCompleted()) {
+            transactionManager.rollback(status);
+        }
     }
 }
