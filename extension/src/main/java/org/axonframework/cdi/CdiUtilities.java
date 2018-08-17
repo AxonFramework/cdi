@@ -9,7 +9,6 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
-// TODO Should this be made package private to limit API visibility?
 public class CdiUtilities {
 
     /**
