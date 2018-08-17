@@ -15,8 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-// TODO Should this be made package private to limit API visibility?
-public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
+class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
     private final Class<T> clazz;
     private final Supplier<T> supplier;

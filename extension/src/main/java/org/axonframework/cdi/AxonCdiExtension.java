@@ -58,7 +58,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
     private Producer<MessageConsumer> messageConsumerProducer;
-    // TODO: this should be a list of producers
+    // TODO this should be a list of producers
     private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
@@ -464,8 +464,8 @@ public class AxonCdiExtension implements Extension {
         // Register message consumers.
         // TODO Verify this is correct.
         if (this.messageConsumerProducer != null) {
-            final Consumer<List<? extends EventMessage<?>>> messageProcessor =
-                    this.messageConsumerProducer.produce(
+            final Consumer<List<? extends EventMessage<?>>> messageProcessor
+                    = this.messageConsumerProducer.produce(
                             beanManager.createCreationalContext(null));
 
             logger.info("Registering a message processor produced in {}.",
