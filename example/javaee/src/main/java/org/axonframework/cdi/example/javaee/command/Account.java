@@ -17,7 +17,8 @@ public class Account {
 
     @AggregateIdentifier
     private String accountId;
-    private Double overdraftLimit;
+    @SuppressWarnings("unused")
+	private Double overdraftLimit;
 
     public Account() {
         // Empty constructor needed for CDI proxying.

@@ -19,9 +19,11 @@ public class AccountApplication {
     private static final Logger logger = Logger.getLogger(
             MethodHandles.lookup().lookupClass().getName());
 
+    @SuppressWarnings("cdi-ambiguous-dependency")
     @Inject
     private EventBus eventBus;
 
+    @SuppressWarnings("cdi-ambiguous-dependency")
     @Inject
     private CommandGateway commandGateway;
 

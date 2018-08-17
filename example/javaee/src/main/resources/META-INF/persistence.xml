@@ -5,7 +5,7 @@
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
     <persistence-unit name="h2">
-        <!-- TODO See if this can be eliminated. It willl confuse most users -->
+        <!-- TODO See if this can be eliminated. It may confuse most users -->
         <!-- TODO Double-check that this is a complete list -->
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
