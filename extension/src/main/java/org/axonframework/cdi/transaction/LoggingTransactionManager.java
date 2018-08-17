@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
  *
  * @author Simon Zambrovski, Holisticon AG
  */
-// TODO Should this be made package private to limit API visibility?
 public enum LoggingTransactionManager implements TransactionManager {
 
     /**
