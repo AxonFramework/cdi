@@ -35,11 +35,17 @@ The base Axon Framework is extremely powerful and flexible. What this extension 
 
 You can define aggregate roots by placing a simple annotation `org.axonframework.cdi.stereotype.Aggregate` on your class. It will be automatically collected by the CDI container and registered (don't forget the `beans.xml`).
 
+## Examples
+Please have a look at the examples in the [examples](/examples) folder.
+
+### Java EE
+The [Java EE](/examples/javaee) example demonstrates the usage inside any Java EE 7+ compatible application server much as Paraya or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested against Payara. 
+
 ## Advanced Usage
 
 ### Usage of JPA Event Store
 
-If you want to use the JPA based event store inside of a container (e.g. JBoss or WildFly), you have to configure the following facilities:
+If you want to use the JPA based event store inside of a container (e.g. Payara or WildFly), you have to configure the following facilities:
 
   *  EntityManagerProvider
   *  TransactionManager
