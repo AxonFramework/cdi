@@ -16,8 +16,6 @@ import java.lang.annotation.Target;
 // TODO Check if there is a Spring equivalent to this.
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Named
-@AggregateRoot
 public @interface SubscribingEventProcessor {
 
     @Nonbinding

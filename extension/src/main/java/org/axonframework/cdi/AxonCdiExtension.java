@@ -21,7 +21,6 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import javax.persistence.PersistenceUnit;
 import org.axonframework.cdi.eventhandling.MessageConsumer;
 import org.axonframework.cdi.stereotype.Aggregate;
-import org.axonframework.cdi.stereotype.EventStoreEnginePersistenceUnit;
 import org.axonframework.cdi.stereotype.SubscribingEventProcessor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -295,14 +294,6 @@ public class AxonCdiExtension implements Extension {
             logger.debug("Found event handler {}.", bean.getBeanClass().getSimpleName());
 
             eventHandlers.add(bean);
-        }
-
-        if (CdiUtilities.hasAnnotatedMember(bean, PersistenceUnit.class,
-                EventStoreEnginePersistenceUnit.class)) {
-            logger.debug("Found persistent unit for event store {}.", processBean);
-
-            // TODO Missing implementation? It is really needed or is entity
-            // manager provider override sufficient?
         }
     }
 
