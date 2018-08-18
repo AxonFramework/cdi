@@ -7,7 +7,7 @@ The current minimum supported versions are:
  * Axon Framework 3.1.1
  * CDI 1.1/Java EE 7
  
-We will test the module with WildFly/JBoss EAP, Thorntail (formerly WildFly Swarm), GlassFish/Payara, WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. 
+We will test the module with WildFly/JBoss EAP, Thorntail (formerly WildFly Swarm), Payara, WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 
 ## Usage
 
@@ -39,7 +39,7 @@ You can define aggregate roots by placing a simple annotation `org.axonframework
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Paraya or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested against Payara and WildFly. 
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Paraya or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara and WildFly. 
 
 ## Advanced Usage
 
