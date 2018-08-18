@@ -4,7 +4,7 @@
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
              http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
-    <persistence-unit name="h2">
+    <persistence-unit name="account">
         <!-- TODO See if this can be eliminated. It may confuse most users -->
         <!-- TODO Double-check that this is a complete list -->
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
@@ -14,6 +14,9 @@
         <properties>
             <property name="javax.persistence.schema-generation.database.action"
                       value="drop-and-create"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name = "hibernate.show_sql" value = "true" />
         </properties>
     </persistence-unit>
 </persistence>

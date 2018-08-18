@@ -1,5 +1,6 @@
 package org.axonframework.cdi.example.javaee.configuration;
 
+import java.io.Serializable;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.persistence.EntityManager;
@@ -16,9 +17,9 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 
 @ApplicationScoped
-public class AxonConfiguration {
+public class AxonConfiguration implements Serializable {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "account")
     private EntityManager entityManager;
 
     /**
