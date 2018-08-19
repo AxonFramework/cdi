@@ -19,54 +19,54 @@ import org.axonframework.serialization.json.JacksonSerializer;
 @ApplicationScoped
 public class AxonConfiguration implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@PersistenceContext(unitName = "account")
-	private EntityManager entityManager;
+    @PersistenceContext(unitName = "account")
+    private EntityManager entityManager;
 
-	/**
-	 * Produces the entity manager provider.
-	 *
-	 * @return entity manager provider.
-	 */
-	@Produces
-	public EntityManagerProvider getEntityManagerProvider() {
-		return new SimpleEntityManagerProvider(entityManager);
-	}
+    /**
+     * Produces the entity manager provider.
+     *
+     * @return entity manager provider.
+     */
+    @Produces
+    public EntityManagerProvider getEntityManagerProvider() {
+        return new SimpleEntityManagerProvider(entityManager);
+    }
 
-	@Produces
-	public TransactionManager transactionManager() {
-		// TODO See if Axon can work with a managed JTA transaction manager.
-		return NoTransactionManager.INSTANCE;
-	}
+    @Produces
+    public TransactionManager transactionManager() {
+        // TODO See if Axon can work with a managed JTA transaction manager.
+        return NoTransactionManager.INSTANCE;
+    }
 
-	/**
-	 * Produces container transaction aware JPA storage engine.
-	 *
-	 * @return Event storage engine.
-	 */
-	@Produces
-	public EventStorageEngine eventStorageEngine() {
-		return new JpaEventStorageEngine(getEntityManagerProvider(), transactionManager());
-	}
+    /**
+     * Produces container transaction aware JPA storage engine.
+     *
+     * @return Event storage engine.
+     */
+    @Produces
+    public EventStorageEngine eventStorageEngine() {
+        return new JpaEventStorageEngine(getEntityManagerProvider(), transactionManager());
+    }
 
-	/**
-	 * Produces JPA token store.
-	 *
-	 * @return token store.
-	 */
-	@Produces
-	public TokenStore tokenStore() {
-		return new JpaTokenStore(getEntityManagerProvider(), serializer());
-	}
+    /**
+     * Produces JPA token store.
+     *
+     * @return token store.
+     */
+    @Produces
+    public TokenStore tokenStore() {
+        return new JpaTokenStore(getEntityManagerProvider(), serializer());
+    }
 
-	/**
-	 * Produces Jackson serializer.
-	 *
-	 * @return serializer.
-	 */
-	@Produces
-	public Serializer serializer() {
-		return new JacksonSerializer();
-	}
+    /**
+     * Produces Jackson serializer.
+     *
+     * @return serializer.
+     */
+    @Produces
+    public Serializer serializer() {
+        return new JacksonSerializer();
+    }
 }
