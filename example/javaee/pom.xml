@@ -98,5 +98,27 @@
                 </plugins>
             </build>
         </profile>
+        <!--
+        <profile>
+            <id>payara</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven2-plugin</artifactId>
+                        <version>1.6.9</version>
+                        <configuration>
+                            <container>
+                                <containerId>glassfish5x</containerId>
+                                <zipUrlInstaller>
+                                    <url>http://www.rahmannet.net/downloads/payara-5.182.zip</url>
+                                </zipUrlInstaller>
+                            </container>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        -->
     </profiles>
 </project>
