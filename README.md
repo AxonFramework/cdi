@@ -39,7 +39,11 @@ You can define aggregate roots by placing a simple annotation `org.axonframework
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Paraya or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara and WildFly. 
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara and WildFly.
+
+For convenience, we have added Cargo configurations in separate Maven profiles for each supported and tested application server.
+
+* To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 
 ## Advanced Usage
 
