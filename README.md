@@ -33,7 +33,7 @@ The base Axon Framework is extremely powerful and flexible. What this extension 
   
 ### Aggregates
 
-You can define aggregate roots by placing a simple annotation `org.axonframework.cdi.stereotype.Aggregate` on your class. It will be automatically collected by the CDI container and registered (don't forget the `beans.xml`).
+You can define aggregate roots by placing a simple annotation `org.axonframework.cdi.stereotype.Aggregate` on your class. It will be automatically collected by the CDI container and registered.
 
 ## Examples
 Please have a look at the examples in the [example](/example) folder.
