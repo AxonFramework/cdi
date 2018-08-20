@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
+// Antoine: Is there a better way to do this while still sticking to CDI 1.1/
+// Java EE 7?
 public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
     private final Class<T> clazz;
@@ -31,7 +33,7 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    // TODO Verify that this is correct.
+    // Antoine: Is this correct? Should I be doing something additional?
     public void destroy(T instance, final CreationalContext<T> context) {
         instance = null;
         context.release();
@@ -98,7 +100,9 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    // TODO Verify that this is correct.
+    // Antoine: Is this sufficiently unique? Will this wrapper actually ever
+    // get serialized? Is this supposed to be the ID of the underlying
+    // bean instance or just this bean definition?
     public String getId() {
         return clazz.toString() + "#" + supplier.toString();
     }

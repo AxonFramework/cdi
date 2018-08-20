@@ -65,6 +65,12 @@ public class AxonCdiExtension implements Extension {
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
     private Producer<TokenStore> tokenStoreProducer;
 
+    // Antoine: Many of the beans and producers I am processing may use
+    // container resources such as entity managers, etc. I believe this means
+    // I should be handling them as late as possible to avoid initialization
+    // timing issues. Right now things are processed as they make
+    // "semantic" sense. Do you think this could be improved to do the same
+    // processing later?
     /**
      * Scans all annotated types with the {@link Aggregate} annotation and
      * collects them for registration.
@@ -80,6 +86,11 @@ public class AxonCdiExtension implements Extension {
         aggregates.add(clazz);
     }
 
+    // Antoine: While processing the producers, I can detect configuration 
+    // errors from an Axon standpoint. These errors should result in the 
+    // deployment failing. Should I wait to throw these validation errors until
+    // later or should I do it right now? Is there a specific type of expection
+    // that's better to throw or will any runtime exception do?
     /**
      * Scans for an event storage engine producer.
      *
@@ -307,8 +318,9 @@ public class AxonCdiExtension implements Extension {
         // Configurer registration.
         final Configurer configurer;
         if (this.configurerProducer != null) {
-            // TODO Check if createCreationalContext(null) is correct here. It
-            // likely is.
+            // Antoine: Is createCreationalContext(null) is correct here? 
+            // If not, what should I do instead? Again, many of these things
+            // may be indirectly referencing container resources.
             configurer = this.configurerProducer.produce(
                     beanManager.createCreationalContext(null));
         } else {

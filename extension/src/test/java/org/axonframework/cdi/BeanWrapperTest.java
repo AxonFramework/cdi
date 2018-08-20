@@ -27,6 +27,7 @@ public class BeanWrapperTest {
         assertEquals(new Foo(), testee.create(null));
     }
 
+    // Antoine: How do you think I can test this?
     @Test
     public void testDestroy() {
         // TODO.
