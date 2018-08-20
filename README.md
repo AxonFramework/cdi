@@ -7,7 +7,7 @@ The current minimum supported versions are:
  * Axon Framework 3.1.1
  * CDI 1.1/Java EE 7
  
-We will test the module with WildFly/JBoss EAP, Thorntail (formerly WildFly Swarm), Payara, WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
+We have so far tested sucessfully against Payara and WildFly. We will test the module with JBoss EAP, Thorntail (formerly WildFly Swarm), WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 
 ## Usage
 
