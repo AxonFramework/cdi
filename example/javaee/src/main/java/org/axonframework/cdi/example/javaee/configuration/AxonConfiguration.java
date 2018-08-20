@@ -21,6 +21,7 @@ public class AxonConfiguration implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Produces
     @PersistenceContext(unitName = "account")
     private EntityManager entityManager;
 
@@ -30,11 +31,14 @@ public class AxonConfiguration implements Serializable {
      * @return entity manager provider.
      */
     @Produces
-    public EntityManagerProvider getEntityManagerProvider() {
+    @ApplicationScoped
+    public EntityManagerProvider entityManagerProvider(
+            EntityManager entityManager) {
         return new SimpleEntityManagerProvider(entityManager);
     }
 
     @Produces
+    @ApplicationScoped
     public TransactionManager transactionManager() {
         // TODO See if Axon can work with a managed JTA transaction manager.
         return NoTransactionManager.INSTANCE;
@@ -46,8 +50,11 @@ public class AxonConfiguration implements Serializable {
      * @return Event storage engine.
      */
     @Produces
-    public EventStorageEngine eventStorageEngine() {
-        return new JpaEventStorageEngine(getEntityManagerProvider(), transactionManager());
+    @ApplicationScoped
+    public EventStorageEngine eventStorageEngine(
+            EntityManagerProvider entityManagerProvider,
+            TransactionManager transactionManager) {
+        return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
     }
 
     /**
@@ -56,8 +63,10 @@ public class AxonConfiguration implements Serializable {
      * @return token store.
      */
     @Produces
-    public TokenStore tokenStore() {
-        return new JpaTokenStore(getEntityManagerProvider(), serializer());
+    @ApplicationScoped
+    public TokenStore tokenStore(EntityManagerProvider entityManagerProvider,
+            Serializer serializer) {
+        return new JpaTokenStore(entityManagerProvider, serializer);
     }
 
     /**
@@ -66,6 +75,7 @@ public class AxonConfiguration implements Serializable {
      * @return serializer.
      */
     @Produces
+    @ApplicationScoped
     public Serializer serializer() {
         return new JacksonSerializer();
     }
