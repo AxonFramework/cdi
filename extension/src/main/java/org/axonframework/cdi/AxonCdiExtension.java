@@ -42,6 +42,8 @@ public class AxonCdiExtension implements Extension {
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
 
+    private Configuration configuration;
+
     private final List<Class<?>> aggregates = new ArrayList<>();
     private final List<Bean<?>> eventHandlers = new ArrayList<>();
     private Producer<EventStorageEngine> eventStorageEngineProducer;
@@ -383,7 +385,7 @@ public class AxonCdiExtension implements Extension {
         });
 
         logger.info("Starting Axon configuration.");
-        final Configuration configuration = configurer.buildConfiguration();
+        configuration = configurer.buildConfiguration();
         configuration.start();
 
         logger.info("Registering Axon APIs with CDI.");
@@ -406,6 +408,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
-        // TODO: shut down the configuration
+        configuration.shutdown();
     }
 }
