@@ -2,10 +2,7 @@ package org.axonframework.cdi;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
@@ -18,12 +15,10 @@ import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.inject.spi.Producer;
 import javax.enterprise.inject.spi.WithAnnotations;
-import org.axonframework.cdi.messaging.SubscribableEventMessageSource;
+
 import org.axonframework.cdi.stereotype.Aggregate;
-import org.axonframework.cdi.stereotype.SubscribingEventProcessor;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
@@ -32,7 +27,6 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.serialization.Serializer;
@@ -50,8 +44,6 @@ public class AxonCdiExtension implements Extension {
 
     private final List<Class<?>> aggregates = new ArrayList<>();
     private final List<Bean<?>> eventHandlers = new ArrayList<>();
-    private final Map<String, Producer<SubscribableEventMessageSource>> subscribableEventMessageSourceProducers = new HashMap<>();
-    private final List<Registration> messageProcessorSubscriptions = new ArrayList<>();
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
     private Producer<EventBus> eventBusProducer;
@@ -241,36 +233,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     /**
-     * Scans for a SubscribableEventMessageSource producer.
-     *
-     * @param processProducer process producer event.
-     * @param beanManager bean manager.
-     */
-    <T> void processSubscribableEventMessageSourceProducer(
-            @Observes final ProcessProducer<T, SubscribableEventMessageSource> processProducer,
-            final BeanManager beanManager) {
-        // TODO Double-check this logic. What is the Spring equivalent?
-        // TODO Handle multiple producer definitions.
-        logger.debug("Producer for SubscribableEventMessageSource found: {}.",
-                processProducer.getProducer());
-
-        final String packageName = processProducer.getAnnotatedMember().getAnnotation(
-                SubscribingEventProcessor.class).packageName();
-        final Producer<SubscribableEventMessageSource> subscribableEventMessageSourceProducer
-                = processProducer.getProducer();
-        if (subscribableEventMessageSourceProducers.containsKey(packageName)) {
-            logger.warn(
-                    "Two SubscribableEventMessageSource producers found for the same package {}. {} is used, {} is ignored.",
-                    packageName,
-                    subscribableEventMessageSourceProducers.get(packageName),
-                    subscribableEventMessageSourceProducer);
-        } else {
-            this.subscribableEventMessageSourceProducers.put(packageName,
-                    subscribableEventMessageSourceProducer);
-        }
-    }
-
-    /**
      * Scans all beans and collects beans with {@link EventHandler} annotated
      * methods.
      *
@@ -369,18 +331,6 @@ public class AxonCdiExtension implements Extension {
             eventHandlerConfiguration = new EventHandlingConfiguration();
         }
 
-        // Register event sources.
-        subscribableEventMessageSourceProducers.forEach((packageName, producer) -> {
-            final SubscribableEventMessageSource eventSource = producer.produce(
-                    beanManager.createCreationalContext(null));
-
-            logger.info("Registering event processor {}, attaching to event source {}.",
-                    packageName, eventSource);
-
-            eventHandlerConfiguration.registerSubscribingEventProcessor(
-                    packageName, c -> eventSource);
-        });
-
         // Register event handlers.
         eventHandlers.forEach(eventHandler -> {
             logger.info("Registering event handler {}.",
@@ -456,6 +406,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
-        messageProcessorSubscriptions.forEach(Registration::cancel);
+        // TODO: shut down the configuration
     }
 }
