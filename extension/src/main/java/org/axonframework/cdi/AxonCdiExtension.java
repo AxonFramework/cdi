@@ -18,7 +18,6 @@ import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.inject.spi.Producer;
 import javax.enterprise.inject.spi.WithAnnotations;
-import org.axonframework.cdi.eventhandling.MessageConsumer;
 import org.axonframework.cdi.messaging.SubscribableEventMessageSource;
 import org.axonframework.cdi.stereotype.Aggregate;
 import org.axonframework.cdi.stereotype.SubscribingEventProcessor;
@@ -57,7 +56,6 @@ public class AxonCdiExtension implements Extension {
     private Producer<Serializer> serializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
-    private Producer<MessageConsumer> messageConsumerProducer;
     // TODO this should be a list of producers
     private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
     private Producer<Configurer> configurerProducer;
@@ -205,23 +203,6 @@ public class AxonCdiExtension implements Extension {
                 processProducer.getProducer());
 
         this.commandBusProducer = processProducer.getProducer();
-    }
-
-    /**
-     * Scans for a message consumer producer.
-     *
-     * @param processProducer process producer event.
-     * @param beanManager bean manager.
-     */
-    <T> void processMessageConsumerProducer(
-            @Observes final ProcessProducer<T, MessageConsumer> processProducer,
-            final BeanManager beanManager) {
-        // TODO Handle multiple producer definitions.
-
-        logger.debug("Producer for MessageConsumer found: {}.",
-                processProducer.getProducer());
-
-        this.messageConsumerProducer = processProducer.getProducer();
     }
 
     /**
@@ -469,20 +450,6 @@ public class AxonCdiExtension implements Extension {
         if (this.serializerProducer == null) {
             afterBeanDiscovery.addBean(
                     new BeanWrapper<>(Serializer.class, configuration::serializer));
-        }
-
-        // Register message consumers.
-        // TODO Verify this is correct.
-        if (this.messageConsumerProducer != null) {
-            final Consumer<List<? extends EventMessage<?>>> messageProcessor
-                    = this.messageConsumerProducer.produce(
-                            beanManager.createCreationalContext(null));
-
-            logger.info("Registering a message processor produced in {}.",
-                    messageConsumerProducer.getClass().getSimpleName());
-
-            this.messageProcessorSubscriptions.add(
-                    configuration.eventBus().subscribe(messageProcessor));
         }
 
         logger.info("Axon Framework configuration complete.");
