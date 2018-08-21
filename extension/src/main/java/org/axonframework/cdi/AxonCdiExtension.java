@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 // * SagaStore
 // * Snapshotter
 // * SnapshotTriggerDefinition
+// * CorrelationDataProvider
 public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
