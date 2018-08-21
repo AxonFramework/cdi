@@ -46,6 +46,7 @@ public class AxonCdiExtension implements Extension {
 
     private final List<Class<?>> aggregates = new ArrayList<>();
     private final List<Bean<?>> eventHandlers = new ArrayList<>();
+
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
     private Producer<EventBus> eventBusProducer;
@@ -81,8 +82,9 @@ public class AxonCdiExtension implements Extension {
     // Antoine: While processing the producers, I can detect configuration 
     // errors from an Axon standpoint. These errors should result in the 
     // deployment failing. Should I wait to throw these validation errors until
-    // later or should I do it right now? Is there a specific type of expection
-    // that's better to throw or will any runtime exception do?
+    // later or should I do it right now during annotation scanning? Is there a 
+    // specific type of exception that's better to throw or will any runtime 
+    // exception do?
     /**
      * Scans for an event storage engine producer.
      *
@@ -262,6 +264,7 @@ public class AxonCdiExtension implements Extension {
 
         // Configurer registration.
         final Configurer configurer;
+
         if (this.configurerProducer != null) {
             // Antoine: Is createCreationalContext(null) is correct here? 
             // If not, what should I do instead? Again, many of these things
