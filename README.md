@@ -71,6 +71,5 @@ A few other folks took this community-driven work a step much further by more cl
 
 * _[Simon Zambrovski](https://github.com/zambrovski)/[Holisticon](https://github.com/holisticon)_
 * _[Jan Galinski](https://github.com/galinski)/[Holisticon](https://github.com/holisticon)_
-* _[Alex](https://github.com/alexmacavei)_
 
 The official Axon support for CDI is based on the collective hard work of these folks in the community. AxonIQ is very grateful to all direct and indirect community contributors to this module.
