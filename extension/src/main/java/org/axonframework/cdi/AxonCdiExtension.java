@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * Main CDI extension class responsible for collecting CDI beans and setting up
  * Axon configuration.
  */
-// TODO: Possibly missing scanning/configuration/registration/injction:
+// TODO: Possibly missing scanning/configuration/registration/injection:
 // * Repository<Aggregate.Type>
 // * EventScheduler
 // * @SagaEventHandler
@@ -88,11 +88,11 @@ public class AxonCdiExtension implements Extension {
         aggregates.add(clazz);
     }
 
-    // Antoine: While processing the producers, I can detect configuration 
-    // errors from an Axon standpoint. These errors should result in the 
+    // Antoine: While processing the producers, I can detect configuration
+    // errors from an Axon standpoint. These errors should result in the
     // deployment failing. Should I wait to throw these validation errors until
-    // later or should I do it right now during annotation scanning? Is there a 
-    // specific type of exception that's better to throw or will any runtime 
+    // later or should I do it right now during annotation scanning? Is there a
+    // specific type of exception that's better to throw or will any runtime
     // exception do?
     /**
      * Scans for an event storage engine producer.
@@ -275,7 +275,7 @@ public class AxonCdiExtension implements Extension {
         final Configurer configurer;
 
         if (this.configurerProducer != null) {
-            // Antoine: Is createCreationalContext(null) is correct here? 
+            // Antoine: Is createCreationalContext(null) is correct here?
             // If not, what should I do instead? Again, many of these things
             // may be indirectly referencing container resources.
             configurer = this.configurerProducer.produce(
