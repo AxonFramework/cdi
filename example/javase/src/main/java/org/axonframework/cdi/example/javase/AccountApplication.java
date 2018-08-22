@@ -18,9 +18,6 @@ public class AccountApplication {
     @Inject
     private CommandGateway commandGateway;
 
-    /**
-     * Main method interacting with the application.
-     */
     public void run() {
         eventBus.registerDispatchInterceptor(new EventLoggingInterceptor());
         commandGateway.send(new CreateAccountCommand("4711", 1000D));

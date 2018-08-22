@@ -64,3 +64,4 @@ hs_err_pid*
 
 example/javaee/nb-configuration.xml
 example/javaee/nbactions.xml
+example/javase/nbactions.xml
