@@ -7,6 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
@@ -15,6 +16,7 @@ import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.inject.spi.Producer;
 import javax.enterprise.inject.spi.WithAnnotations;
+import javax.inject.Named;
 
 import org.axonframework.cdi.stereotype.Aggregate;
 import org.axonframework.commandhandling.CommandBus;
@@ -58,6 +60,7 @@ public class AxonCdiExtension implements Extension {
 
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
+    private Producer<Serializer> eventSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
     // TODO this should be a list of producers
@@ -153,11 +156,27 @@ public class AxonCdiExtension implements Extension {
     <T> void processSerializerProducer(
             @Observes final ProcessProducer<T, Serializer> processProducer,
             final BeanManager beanManager) {
-        // TODO Handle multiple producer definitions.
-
         logger.debug("Producer for Serializer found: {}.", processProducer.getProducer());
-
-        this.serializerProducer = processProducer.getProducer();
+        AnnotatedMember<T> annotatedMember = processProducer.getAnnotatedMember();
+        Named qualifier = annotatedMember.getAnnotation(Named.class);
+        if (qualifier != null) {
+            String qualifierValue = qualifier.value();
+            String serializerName = "".equals(qualifierValue)
+                    ? annotatedMember.getJavaMember().getName()
+                    : qualifierValue;
+            switch (serializerName) {
+                case "eventSerializer":
+                    eventSerializerProducer = processProducer.getProducer();
+                    break;
+                case "":
+                    this.serializerProducer = processProducer.getProducer();
+                    break;
+                default:
+                    logger.warn("Unknown serializer configured: " + serializerName);
+            }
+        } else {
+            this.serializerProducer = processProducer.getProducer();
+        }
     }
 
     /**
@@ -306,6 +325,17 @@ public class AxonCdiExtension implements Extension {
                     serializer.getClass().getSimpleName());
 
             configurer.configureSerializer(c -> serializer);
+        }
+
+        // Event Serializer registration.
+        if (this.eventSerializerProducer != null) {
+            final Serializer serializer = this.eventSerializerProducer.produce(
+                    beanManager.createCreationalContext(null));
+
+            logger.info("Registering event serializer {}.",
+                        serializer.getClass().getSimpleName());
+
+            configurer.configureEventSerializer(c -> serializer);
         }
 
         // Transaction manager registration.
