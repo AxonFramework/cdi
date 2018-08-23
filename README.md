@@ -45,6 +45,11 @@ For convenience, we have added Cargo configurations in separate Maven profiles f
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 
+### Java SE
+The [Java SE](/example/javase) example demonstrates usage in a non-Java EE, Java SE environment that is CDI enabled (that could include a Servlet-only environment with CDI). Note that while the extension targets CDI 1.1, the example uses the CDI 2 Java SE bootstrap API. It is also easily possible to achieve the same functionality in CDI 1.1 using CDI implementation (such as Weld) specific Java SE bootstrap APIs (in the same vein it is possible to use the CDI 2 Java SE bootstrap API in Servlet containers). The example is a generic Maven Java SE application you should be able to build on any IDE, generate a Java SE executable jar and run from the command line using `java -jar`.
+
+For convenience, we have added a Maven exec Java plugin in the Maven configuration. You can run the application by simply executing the Maven target: `mvn package exec:java`
+
 ## Advanced Usage
 
 ### Usage of JPA Event Store
