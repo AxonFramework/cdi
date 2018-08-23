@@ -97,7 +97,6 @@
                 </plugins>
             </build>
         </profile>
-        <!--
         <profile>
             <id>jboss</id>
             <build>
@@ -108,11 +107,10 @@
                         <version>1.6.9</version>
                         <configuration>
                             <container>
-                                <containerId>jboss71x</containerId>
+                                <containerId>wildfly11x</containerId>
                                 <zipUrlInstaller>
-                                    <url>http://download.jboss.org/jbossas/7.1/jboss-as-7.1.1.Final/jboss-as-7.1.1.Final.zip</url>
+                                    <url>http://www.rahmannet.net/downloads/jboss-eap-7.1.0.zip</url>
                                 </zipUrlInstaller>
-                                <timeout>360000</timeout>
                             </container>
                             <configuration>
                                 <properties>
@@ -124,7 +122,6 @@
                 </plugins>
             </build>
         </profile>
-        -->
         <!--
         <profile>
             <id>payara</id>
