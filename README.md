@@ -6,8 +6,9 @@ The current minimum supported versions are:
 
  * Axon Framework 3.1.1
  * CDI 1.1/Java EE 7
+ * Java SE 8
  
-We have so far tested sucessfully against Payara and WildFly. We will test the module with JBoss EAP, Thorntail (formerly WildFly Swarm), WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
+We have so far tested sucessfully against Payara, WildFly and JBoss EAP. We will test the module with Thorntail (formerly WildFly Swarm), WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 
 ## Usage
 
@@ -39,11 +40,12 @@ You can define aggregate roots by placing a simple annotation `org.axonframework
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara and WildFly.
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly and JBoss EAP.
 
 For convenience, we have added Cargo configurations in separate Maven profiles for each supported and tested application server.
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
+* To run the example against JBoss EAP, simply execute the Maven target: `mvn package cargo:run -Pjboss`
 
 ### Java SE
 The [Java SE](/example/javase) example demonstrates usage in a non-Java EE, Java SE environment that is CDI enabled (that could include a Servlet-only 
