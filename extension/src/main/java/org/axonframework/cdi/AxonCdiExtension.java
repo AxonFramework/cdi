@@ -28,6 +28,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -52,7 +53,6 @@ import org.slf4j.LoggerFactory;
 // * SagaStore
 // * Snapshotter
 // * SnapshotTriggerDefinition
-// * CorrelationDataProvider
 public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
@@ -68,8 +68,6 @@ public class AxonCdiExtension implements Extension {
     private Producer<Serializer> eventSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
-    // TODO this should be a list of producers
-    private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
@@ -78,6 +76,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<ErrorHandler> errorHandlerProducer;
     private List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
+    private List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -189,23 +188,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     /**
-     * Scans for an event handling configuration producer.
-     *
-     * @param processProducer process producer event.
-     * @param beanManager bean manager.
-     */
-    <T> void processEventHandlingConfigurationProducer(
-            @Observes final ProcessProducer<T, EventHandlingConfiguration> processProducer,
-            final BeanManager beanManager) {
-        // TODO Handle multiple producer definitions.
-
-        logger.debug("Producer for EventHandlingConfiguration found: {}.",
-                processProducer.getProducer());
-
-        this.eventHandlingConfigurationProducer = processProducer.getProducer();
-    }
-
-    /**
      * Scans for an event bus producer.
      *
      * @param processProducer process producer event.
@@ -311,6 +293,16 @@ public class AxonCdiExtension implements Extension {
         this.queryBusProducer = processProducer.getProducer();
     }
 
+    <T> void processModuleConfigurationProducer(
+            @Observes final ProcessProducer<T, ModuleConfiguration> processProducer,
+            final BeanManager beanManager) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for ModuleConfiguration: {}.", processProducer.getProducer());
+
+        this.moduleConfigurationProducers.add(processProducer.getProducer());
+    }
+
     /**
      * Scans all beans and collects beans with {@link EventHandler} annotated
      * methods.
@@ -411,29 +403,29 @@ public class AxonCdiExtension implements Extension {
         }
 
         // Event handling configuration registration.
-        final EventHandlingConfiguration eventHandlerConfiguration;
+        EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration();
 
-        // TODO Attach some logging here.
-        if (this.eventHandlingConfigurationProducer != null) {
-            eventHandlerConfiguration
-                    = this.eventHandlingConfigurationProducer.produce(
-                            beanManager.createCreationalContext(null));
-        } else {
-            eventHandlerConfiguration = new EventHandlingConfiguration();
+        if (this.moduleConfigurationProducers.size() > 0) {
+            for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
+                ModuleConfiguration moduleConfiguration = producer.produce(beanManager.createCreationalContext(null));
+                logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
+                configurer.registerModule(moduleConfiguration);
+
+                if (moduleConfiguration instanceof EventHandlingConfiguration) {
+                    eventHandlingConfiguration = (EventHandlingConfiguration) moduleConfiguration;
+                }
+            }
         }
 
         // Register event handlers.
-        eventHandlers.forEach(eventHandler -> {
+        for (Bean<?> eventHandler : eventHandlers) {
             logger.info("Registering event handler {}.",
-                    eventHandler.getBeanClass().getName());
+                        eventHandler.getBeanClass().getName());
 
-            eventHandlerConfiguration.registerEventHandler(
+            eventHandlingConfiguration.registerEventHandler(
                     c -> eventHandler.create(
                             beanManager.createCreationalContext(null)));
-        });
-
-        // Event handler configuration registration.
-        configurer.registerModule(eventHandlerConfiguration);
+        }
 
         // Event bus registration.
         if (this.eventBusProducer != null) {
