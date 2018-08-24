@@ -12,7 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <axon.version>3.1.1</axon.version>
+        <axon.version>3.2.3</axon.version>
         <axon-cdi.version>0.1-SNAPSHOT</axon-cdi.version>
         <weld.version>3.0.5.Final</weld.version>
         <junit.version>4.12</junit.version>
