@@ -4,7 +4,7 @@ This Axon Framework module provides support for the CDI programming model. It is
 
 The current minimum supported versions are:
 
-* Axon Framework 3.2.3
+* Axon Framework 3.3.5
 * CDI 1.1/Java EE 7
 * Java SE 8
  
