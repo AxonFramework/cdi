@@ -5,9 +5,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import org.axonframework.cdi.transaction.JtaTransactionManager;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
@@ -40,8 +40,8 @@ public class AxonConfiguration implements Serializable {
     @Produces
     @ApplicationScoped
     public TransactionManager transactionManager() {
-        // TODO See if Axon can work with a managed JTA transaction manager.
-        return NoTransactionManager.INSTANCE;
+        return new JtaTransactionManager();
+        // return NoTransactionManager.INSTANCE;
     }
 
     /**
