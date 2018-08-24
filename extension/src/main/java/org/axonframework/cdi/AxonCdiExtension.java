@@ -37,15 +37,6 @@ import org.slf4j.LoggerFactory;
  * Main CDI extension class responsible for collecting CDI beans and setting up
  * Axon configuration.
  */
-// TODO: Possibly missing scanning/configuration/registration/injection:
-// * Repository<Aggregate.Type>
-// * EventScheduler
-// * @SagaEventHandler
-// * EventStore
-// * SagaStore
-// * Snapshotter
-// * SnapshotTriggerDefinition
-// * CorrelationDataProvider
 public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
