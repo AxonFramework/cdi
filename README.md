@@ -27,6 +27,8 @@ The base Axon Framework is extremely powerful and flexible. What this extension 
  * [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
  * [CommandGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/gateway/CommandGateway.html)
  * [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
+ * [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
+ * [QueryGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryGateway.html)
  * [Serializer](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/Serializer.html)
  * [Configuration](http://www.axonframework.org/apidocs/3.3/org/axonframework/config/Configuration.html)
  
@@ -71,7 +73,7 @@ If you want to use the JPA based event store inside of a container (e.g. Payara 
 Please see the examples for details.
 
 ## Roadmap
-The module currently does not support sagas and snapshoters. Such support will be added as soon as possible. We will also add support for Axon 3.3 in the near term.
+The module currently does not support sagas, snapshoters and subscription queries. Such support will be added as soon as possible.
 
 ## Acknowledgements
 The work for Axon to support CDI started in the community. The earliest CDI support for Axon came from the following folks:
