@@ -8,6 +8,9 @@ import org.axonframework.cdi.example.javase.command.CreateAccountCommand;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.interceptors.EventLoggingInterceptor;
+import org.axonframework.queryhandling.QueryGateway;
+
+import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class AccountApplication {
@@ -18,9 +21,14 @@ public class AccountApplication {
     @Inject
     private CommandGateway commandGateway;
 
+    @Inject
+    private QueryGateway queryGateway;
+
     public void run() {
         eventBus.registerDispatchInterceptor(new EventLoggingInterceptor());
-        commandGateway.send(new CreateAccountCommand("4711", 1000D));
+        commandGateway.sendAndWait(new CreateAccountCommand("4711", 1000D));
+        queryGateway.send("4711", Double.class, 1, TimeUnit.SECONDS)
+                    .forEach(System.out::println);
     }
 
     public static void main(final String[] args) {
