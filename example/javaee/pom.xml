@@ -12,7 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <javaee-api.version>7.0</javaee-api.version>
-        <axon.version>3.2.3</axon.version>
+        <axon.version>3.3.5</axon.version>
         <axon-cdi.version>0.1-SNAPSHOT</axon-cdi.version>
         <junit.version>4.12</junit.version>
     </properties>

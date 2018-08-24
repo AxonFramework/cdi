@@ -12,7 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <axon.version>3.2.3</axon.version>
+        <axon.version>3.3.5</axon.version>
         <cdi-api.version>1.1</cdi-api.version>
     </properties>
 
