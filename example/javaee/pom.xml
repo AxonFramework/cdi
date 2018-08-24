@@ -35,7 +35,6 @@
             <version>2.6.0</version>
         </dependency>
 
-
         <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
@@ -86,6 +85,31 @@
                                 <containerId>wildfly10x</containerId>
                                 <zipUrlInstaller>
                                     <url>http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.zip</url>
+                                </zipUrlInstaller>
+                            </container>
+                            <configuration>
+                                <properties>
+                                    <cargo.jboss.management-http.port>9991</cargo.jboss.management-http.port>
+                                </properties>
+                            </configuration>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jboss</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven2-plugin</artifactId>
+                        <version>1.6.9</version>
+                        <configuration>
+                            <container>
+                                <containerId>wildfly11x</containerId>
+                                <zipUrlInstaller>
+                                    <url>http://www.rahmannet.net/downloads/jboss-eap-7.1.0.zip</url>
                                 </zipUrlInstaller>
                             </container>
                             <configuration>
