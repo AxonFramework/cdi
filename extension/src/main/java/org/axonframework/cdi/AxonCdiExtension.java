@@ -29,6 +29,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.serialization.Serializer;
@@ -69,6 +70,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<TransactionManager> transactionManagerProducer;
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
     private Producer<TokenStore> tokenStoreProducer;
+    private Producer<ListenerInvocationErrorHandler> listenerInvocationErrorHandlerProducer;
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -264,6 +266,16 @@ public class AxonCdiExtension implements Extension {
         this.tokenStoreProducer = processProducer.getProducer();
     }
 
+    <T> void processListenerInvocationErrorProducer(
+            @Observes final ProcessProducer<T, ListenerInvocationErrorHandler> processProducer,
+            final BeanManager beanManager) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for ListenerInvocationErrorHandler: {}.", processProducer.getProducer());
+
+        this.listenerInvocationErrorHandlerProducer = processProducer.getProducer();
+    }
+
     /**
      * Scans all beans and collects beans with {@link EventHandler} annotated
      * methods.
@@ -408,6 +420,17 @@ public class AxonCdiExtension implements Extension {
                     tokenStore.getClass().getSimpleName());
 
             configurer.registerComponent(TokenStore.class, c -> tokenStore);
+        }
+
+        // Listener invocation error handler registration.
+        if (this.listenerInvocationErrorHandlerProducer != null) {
+            ListenerInvocationErrorHandler listenerInvocationErrorHandler = this.listenerInvocationErrorHandlerProducer
+                    .produce(beanManager.createCreationalContext(null));
+
+            logger.info("Registering listener invocation error handler {}.",
+                        listenerInvocationErrorHandler.getClass().getSimpleName());
+
+            configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> listenerInvocationErrorHandler);
         }
 
         // Event storage engine registration.
