@@ -4,9 +4,9 @@ This Axon Framework module provides support for the CDI programming model. It is
 
 The current minimum supported versions are:
 
- * Axon Framework 3.2.3
- * CDI 1.1/Java EE 7
- * Java SE 8
+* Axon Framework 3.2.3
+* CDI 1.1/Java EE 7
+* Java SE 8
  
 We have so far tested sucessfully against Payara, WildFly and JBoss EAP. We will test the module with Thorntail (formerly WildFly Swarm), WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 
@@ -21,22 +21,40 @@ The artifact is not yet released to Maven Central and you have to build it local
       </dependency>
 
 ### Automatic Configuration
-
 The base Axon Framework is extremely powerful and flexible. What this extension does is to provide a number of sensible defaults for Axon applications while still allowing you reasonable configutation flexibility - including the ability to override defaults. As soon as you include the module in your project, you will be able to inject a number of Axon APIs into your code using CDI. These APIs represent the most important Axon Framework building blocks:
 
- * [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
- * [CommandGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/gateway/CommandGateway.html)
- * [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
- * [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
- * [QueryGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryGateway.html)
- * [Serializer](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/Serializer.html)
- * [Configuration](http://www.axonframework.org/apidocs/3.3/org/axonframework/config/Configuration.html)
+* [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
+* [CommandGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/gateway/CommandGateway.html)
+* [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
+* [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
+* [QueryGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryGateway.html)
+* [Serializer](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/Serializer.html)
+* [Configuration](http://www.axonframework.org/apidocs/3.3/org/axonframework/config/Configuration.html)
  
- For more details on these objects and the Axon Framework, please consult the [Axon Framework Reference Guide](https://docs.axonframework.org).
+### Overrides
+You can provide configuration overrides for the following Axon artifacts by creating CDI producers for them:
+* [EntityManagerProvider](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/jpa/EntityManagerProvider.html)
+* [EventStorageEngine](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventsourcing/eventstore/EventStorageEngine.html)
+* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA)
+* [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
+* [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
+* [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
+* [TokenStore](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/tokenstore/TokenStore.html)
+* [Serializer](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/Serializer.html) (both a global serializer and an event serializer may be overriden. To override an event serializer, please name the producer "eventSerializer" via the @Named annotation. It is purely optional, but you can use @Named to name your global serializer "serializer". If no @Named annotation is present, the serializer is assumed to be global)
+* [ErrorHandler](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/ErrorHandler.html)
+* [ListenerInvocationErrorHandler](https://github.com/AxonFramework/AxonFramework/blob/master/core/src/main/java/org/axonframework/eventhandling/ListenerInvocationErrorHandler.java)
+* [CorrelationDataProvider](https://github.com/AxonFramework/AxonFramework/blob/master/core/src/main/java/org/axonframework/messaging/correlation/CorrelationDataProvider.java)
+* [ModuleConfiguration](http://www.axonframework.org/apidocs/3.3/org/axonframework/config/ModuleConfiguration.html)
+* [EventUpcaster](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/upcasting/event/EventUpcaster.html)
+* [Configurer](http://www.axonframework.org/apidocs/3.3/org/axonframework/config/Configurer.html)
+
+For more details on these objects and the Axon Framework, please consult the [Axon Framework Reference Guide](https://docs.axonframework.org).
   
 ### Aggregates
-
 You can define aggregate roots by placing a simple annotation `org.axonframework.cdi.stereotype.Aggregate` on your class. It will be automatically collected by the CDI container and registered.
+
+### Event Handlers and Query Handlers
+Event handlers and query handlers must be CDI beans. They will be automatically registered with Axon for you.
 
 ## Examples
 Please have a look at the examples in the [example](/example) folder.
@@ -64,12 +82,11 @@ Maven target: `mvn package exec:java`
 ### Usage of JPA Event Store
 
 If you want to use the JPA based event store inside of a container (e.g. Payara or WildFly), you have to configure the following facilities:
+* [EntityManagerProvider](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/jpa/EntityManagerProvider.html)
+* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA)
+* [EventStorageEngine](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventsourcing/eventstore/EventStorageEngine.html)
+* [TokenStore](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/tokenstore/TokenStore.html)
 
-  *  EntityManagerProvider
-  *  TransactionManager
-  *  EventStorageEngine
-  *  TokenStore
-  
 Please see the examples for details.
 
 ## Roadmap
