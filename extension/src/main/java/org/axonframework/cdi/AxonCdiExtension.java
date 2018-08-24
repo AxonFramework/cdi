@@ -38,6 +38,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +78,7 @@ public class AxonCdiExtension implements Extension {
     private List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
     private List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
+    private List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -296,11 +298,17 @@ public class AxonCdiExtension implements Extension {
     <T> void processModuleConfigurationProducer(
             @Observes final ProcessProducer<T, ModuleConfiguration> processProducer,
             final BeanManager beanManager) {
-        // TODO Handle multiple producer definitions.
-
         logger.debug("Producer for ModuleConfiguration: {}.", processProducer.getProducer());
 
         this.moduleConfigurationProducers.add(processProducer.getProducer());
+    }
+
+    <T> void processEventUpcasterProducer(
+            @Observes final ProcessProducer<T, EventUpcaster> processProducer,
+            final BeanManager beanManager) {
+        logger.debug("Producer for EventUpcaster: {}.", processProducer.getProducer());
+
+        this.eventUpcasterProducers.add(processProducer.getProducer());
     }
 
     /**
@@ -405,15 +413,13 @@ public class AxonCdiExtension implements Extension {
         // Event handling configuration registration.
         EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration();
 
-        if (this.moduleConfigurationProducers.size() > 0) {
-            for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
-                ModuleConfiguration moduleConfiguration = producer.produce(beanManager.createCreationalContext(null));
-                logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
-                configurer.registerModule(moduleConfiguration);
+        for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
+            ModuleConfiguration moduleConfiguration = producer.produce(beanManager.createCreationalContext(null));
+            logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
+            configurer.registerModule(moduleConfiguration);
 
-                if (moduleConfiguration instanceof EventHandlingConfiguration) {
-                    eventHandlingConfiguration = (EventHandlingConfiguration) moduleConfiguration;
-                }
+            if (moduleConfiguration instanceof EventHandlingConfiguration) {
+                eventHandlingConfiguration = (EventHandlingConfiguration) moduleConfiguration;
             }
         }
 
@@ -472,19 +478,25 @@ public class AxonCdiExtension implements Extension {
         }
 
         // Correlation data providers registration
-        if (this.correlationDataProviderProducers.size() > 0) {
-            List<CorrelationDataProvider> correlationDataProviders = this.correlationDataProviderProducers
-                    .stream()
-                    .map(producer -> {
-                        CorrelationDataProvider correlationDataProvider = producer.produce(
-                                beanManager.createCreationalContext(null));
-                        logger.info("Registering correlation data provider {}.",
-                                    correlationDataProvider.getClass().getSimpleName());
-                        return correlationDataProvider;
-                    })
-                    .collect(Collectors.toList());
-            configurer.configureCorrelationDataProviders(c -> correlationDataProviders);
-        }
+        List<CorrelationDataProvider> correlationDataProviders = this.correlationDataProviderProducers
+                .stream()
+                .map(producer -> {
+                    CorrelationDataProvider correlationDataProvider = producer.produce(
+                            beanManager.createCreationalContext(null));
+                    logger.info("Registering correlation data provider {}.",
+                                correlationDataProvider.getClass().getSimpleName());
+                    return correlationDataProvider;
+                })
+                .collect(Collectors.toList());
+        configurer.configureCorrelationDataProviders(c -> correlationDataProviders);
+
+        // Event upcasters registration
+        this.eventUpcasterProducers
+                .forEach(producer -> {
+                    EventUpcaster eventUpcaster = producer.produce(beanManager.createCreationalContext(null));
+                    logger.info("Registering event upcaster {}.", eventUpcaster.getClass().getSimpleName());
+                    configurer.registerEventUpcaster(c -> eventUpcaster);
+                });
 
         // Error handler registration.
         if (this.queryBusProducer != null) {
