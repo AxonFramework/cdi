@@ -35,6 +35,7 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +77,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<ListenerInvocationErrorHandler> listenerInvocationErrorHandlerProducer;
     private Producer<ErrorHandler> errorHandlerProducer;
     private List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
+    private Producer<QueryBus> queryBusProducer;
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -271,7 +273,7 @@ public class AxonCdiExtension implements Extension {
         this.tokenStoreProducer = processProducer.getProducer();
     }
 
-    <T> void processListenerInvocationErrorHandlerProducer(
+    <T> void processErrorHandlerProducer(
             @Observes final ProcessProducer<T, ErrorHandler> processProducer,
             final BeanManager beanManager) {
         // TODO Handle multiple producer definitions.
@@ -281,12 +283,12 @@ public class AxonCdiExtension implements Extension {
         this.errorHandlerProducer = processProducer.getProducer();
     }
 
-    <T> void processErrorHandlerProducer(
+    <T> void processListenerInvocationErrorHandlerProducer(
             @Observes final ProcessProducer<T, ListenerInvocationErrorHandler> processProducer,
             final BeanManager beanManager) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for ErrorHandler: {}.", processProducer.getProducer());
+        logger.debug("Producer for ListenerInvocationErrorHandler: {}.", processProducer.getProducer());
 
         this.listenerInvocationErrorHandlerProducer = processProducer.getProducer();
     }
@@ -297,6 +299,16 @@ public class AxonCdiExtension implements Extension {
         logger.debug("Producer for CorrelationDataProvider: {}.", processProducer.getProducer());
 
         this.correlationDataProviderProducers.add(processProducer.getProducer());
+    }
+
+    <T> void processQueryBusProducer(
+            @Observes final ProcessProducer<T, QueryBus> processProducer,
+            final BeanManager beanManager) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for QueryBus: {}.", processProducer.getProducer());
+
+        this.queryBusProducer = processProducer.getProducer();
     }
 
     /**
@@ -480,6 +492,17 @@ public class AxonCdiExtension implements Extension {
                     })
                     .collect(Collectors.toList());
             configurer.configureCorrelationDataProviders(c -> correlationDataProviders);
+        }
+
+        // Error handler registration.
+        if (this.queryBusProducer != null) {
+            QueryBus queryBus = this.queryBusProducer
+                    .produce(beanManager.createCreationalContext(null));
+
+            logger.info("Registering query bus {}.",
+                        queryBus.getClass().getSimpleName());
+
+            configurer.configureQueryBus(c -> queryBus);
         }
 
         // Event storage engine registration.
