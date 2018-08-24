@@ -48,17 +48,6 @@ import org.slf4j.LoggerFactory;
  * Main CDI extension class responsible for collecting CDI beans and setting up
  * Axon configuration.
  */
-<<<<<<< HEAD
-=======
-// TODO: Possibly missing scanning/configuration/registration/injection:
-// * Repository<Aggregate.Type>
-// * EventScheduler
-// * @SagaEventHandler
-// * EventStore
-// * SagaStore
-// * Snapshotter
-// * SnapshotTriggerDefinition
->>>>>>> 765eaef179541c7e067ff199b8e57eba484acffc
 public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
@@ -82,10 +71,13 @@ public class AxonCdiExtension implements Extension {
     private Producer<TokenStore> tokenStoreProducer;
     private Producer<ListenerInvocationErrorHandler> listenerInvocationErrorHandlerProducer;
     private Producer<ErrorHandler> errorHandlerProducer;
-    private final List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
+    private final List<Producer<CorrelationDataProvider>> correlationDataProviderProducers
+            = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
-    private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
-    private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
+    private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers
+            = new ArrayList<>();
+    private final List<Producer<EventUpcaster>> eventUpcasterProducers
+            = new ArrayList<>();
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -173,25 +165,32 @@ public class AxonCdiExtension implements Extension {
     <T> void processSerializerProducer(
             @Observes final ProcessProducer<T, Serializer> processProducer,
             final BeanManager beanManager) {
-        logger.debug("Producer for Serializer found: {}.", processProducer.getProducer());
+        // TODO Handle multiple serializer definitions of the same type.
+
         AnnotatedMember<T> annotatedMember = processProducer.getAnnotatedMember();
-        Named qualifier = annotatedMember.getAnnotation(Named.class);
-        if (qualifier != null) {
-            String qualifierValue = qualifier.value();
-            String serializerName = "".equals(qualifierValue)
+        Named named = annotatedMember.getAnnotation(Named.class);
+
+        if (named != null) {
+            String namedValue = named.value();
+            String serializerName = "".equals(namedValue)
                     ? annotatedMember.getJavaMember().getName()
-                    : qualifierValue;
+                    : namedValue;
             switch (serializerName) {
                 case "eventSerializer":
+                    logger.debug("Producer for EventSerializer found: {}.",
+                            processProducer.getProducer());
                     eventSerializerProducer = processProducer.getProducer();
                     break;
-                case "":
+                case "serializer":
+                    logger.debug("Producer for Serializer found: {}.",
+                            processProducer.getProducer());
                     this.serializerProducer = processProducer.getProducer();
                     break;
                 default:
-                    logger.warn("Unknown serializer configured: " + serializerName);
+                    logger.warn("Unknown named serializer configured: " + serializerName);
             }
         } else {
+            logger.debug("Producer for Serializer found: {}.", processProducer.getProducer());
             this.serializerProducer = processProducer.getProducer();
         }
     }
@@ -279,7 +278,8 @@ public class AxonCdiExtension implements Extension {
             final BeanManager beanManager) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for ListenerInvocationErrorHandler: {}.", processProducer.getProducer());
+        logger.debug("Producer for ListenerInvocationErrorHandler: {}.",
+                processProducer.getProducer());
 
         this.listenerInvocationErrorHandlerProducer = processProducer.getProducer();
     }
@@ -395,7 +395,7 @@ public class AxonCdiExtension implements Extension {
                     beanManager.createCreationalContext(null));
 
             logger.info("Registering event serializer {}.",
-                        serializer.getClass().getSimpleName());
+                    serializer.getClass().getSimpleName());
 
             configurer.configureEventSerializer(c -> serializer);
         }
@@ -429,8 +429,10 @@ public class AxonCdiExtension implements Extension {
         EventHandlingConfiguration eventHandlingConfiguration = null;
 
         for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
-            ModuleConfiguration moduleConfiguration = producer.produce(beanManager.createCreationalContext(null));
-            logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
+            ModuleConfiguration moduleConfiguration
+                    = producer.produce(beanManager.createCreationalContext(null));
+            logger.info("Registering module configuration {}.",
+                    moduleConfiguration.getClass().getSimpleName());
             configurer.registerModule(moduleConfiguration);
 
             if (moduleConfiguration instanceof EventHandlingConfiguration) {
@@ -454,7 +456,7 @@ public class AxonCdiExtension implements Extension {
         // Register event handlers.
         for (Bean<?> eventHandler : eventHandlers) {
             logger.info("Registering event handler {}.",
-                        eventHandler.getBeanClass().getName());
+                    eventHandler.getBeanClass().getName());
 
             eventHandlingConfiguration.registerEventHandler(
                     c -> eventHandler.create(
@@ -465,7 +467,8 @@ public class AxonCdiExtension implements Extension {
         for (Bean<?> queryHandler : queryHandlers) {
             logger.info("Registering query handler {}.", queryHandler.getBeanClass().getName());
 
-            configurer.registerQueryHandler(c -> queryHandler.create(beanManager.createCreationalContext(null)));
+            configurer.registerQueryHandler(c -> queryHandler.create(
+                    beanManager.createCreationalContext(null)));
         }
 
         // Event bus registration.
@@ -492,13 +495,15 @@ public class AxonCdiExtension implements Extension {
 
         // Listener invocation error handler registration.
         if (this.listenerInvocationErrorHandlerProducer != null) {
-            ListenerInvocationErrorHandler listenerInvocationErrorHandler = this.listenerInvocationErrorHandlerProducer
-                    .produce(beanManager.createCreationalContext(null));
+            ListenerInvocationErrorHandler listenerInvocationErrorHandler
+                    = this.listenerInvocationErrorHandlerProducer
+                            .produce(beanManager.createCreationalContext(null));
 
             logger.info("Registering listener invocation error handler {}.",
-                        listenerInvocationErrorHandler.getClass().getSimpleName());
+                    listenerInvocationErrorHandler.getClass().getSimpleName());
 
-            configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> listenerInvocationErrorHandler);
+            configurer.registerComponent(ListenerInvocationErrorHandler.class,
+                    c -> listenerInvocationErrorHandler);
         }
 
         // Error handler registration.
@@ -507,7 +512,7 @@ public class AxonCdiExtension implements Extension {
                     .produce(beanManager.createCreationalContext(null));
 
             logger.info("Registering error handler {}.",
-                        errorHandler.getClass().getSimpleName());
+                    errorHandler.getClass().getSimpleName());
 
             configurer.registerComponent(ErrorHandler.class, c -> errorHandler);
         }
@@ -519,7 +524,7 @@ public class AxonCdiExtension implements Extension {
                     CorrelationDataProvider correlationDataProvider = producer.produce(
                             beanManager.createCreationalContext(null));
                     logger.info("Registering correlation data provider {}.",
-                                correlationDataProvider.getClass().getSimpleName());
+                            correlationDataProvider.getClass().getSimpleName());
                     return correlationDataProvider;
                 })
                 .collect(Collectors.toList());
@@ -539,7 +544,7 @@ public class AxonCdiExtension implements Extension {
                     .produce(beanManager.createCreationalContext(null));
 
             logger.info("Registering query bus {}.",
-                        queryBus.getClass().getSimpleName());
+                    queryBus.getClass().getSimpleName());
 
             configurer.configureQueryBus(c -> queryBus);
         }
