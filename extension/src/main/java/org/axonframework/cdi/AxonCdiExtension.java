@@ -37,6 +37,8 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
@@ -63,6 +65,8 @@ public class AxonCdiExtension implements Extension {
 
     private final List<Class<?>> aggregates = new ArrayList<>();
     private final List<Bean<?>> eventHandlers = new ArrayList<>();
+    private final List<Bean<?>> queryHandlers = new ArrayList<>();
+    private final List<Bean<?>> projections = new ArrayList<>();
 
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
@@ -75,10 +79,10 @@ public class AxonCdiExtension implements Extension {
     private Producer<TokenStore> tokenStoreProducer;
     private Producer<ListenerInvocationErrorHandler> listenerInvocationErrorHandlerProducer;
     private Producer<ErrorHandler> errorHandlerProducer;
-    private List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
+    private final List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
-    private List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
-    private List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
+    private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
+    private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -320,10 +324,18 @@ public class AxonCdiExtension implements Extension {
     <T> void processBean(@Observes final ProcessBean<T> processBean) {
         final Bean<?> bean = processBean.getBean();
 
-        if (CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class)) {
-            logger.debug("Found event handler {}.", bean.getBeanClass().getSimpleName());
+        boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
+        boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
 
+        if (isEventHandler && isQueryHandler) {
+            logger.debug("Found projection {}.", bean.getBeanClass().getSimpleName());
+            projections.add(bean);
+        } else if (isEventHandler) {
+            logger.debug("Found event handler {}.", bean.getBeanClass().getSimpleName());
             eventHandlers.add(bean);
+        } else if (isQueryHandler) {
+            logger.debug("Found query handler {}.", bean.getBeanClass().getSimpleName());
+            queryHandlers.add(bean);
         }
     }
 
@@ -411,7 +423,7 @@ public class AxonCdiExtension implements Extension {
         }
 
         // Event handling configuration registration.
-        EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration();
+        EventHandlingConfiguration eventHandlingConfiguration = null;
 
         for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
             ModuleConfiguration moduleConfiguration = producer.produce(beanManager.createCreationalContext(null));
@@ -423,6 +435,19 @@ public class AxonCdiExtension implements Extension {
             }
         }
 
+        if (eventHandlingConfiguration == null) {
+            eventHandlingConfiguration = new EventHandlingConfiguration();
+            configurer.registerModule(eventHandlingConfiguration);
+        }
+
+        // Register projections.
+        for (Bean<?> projection : projections) {
+            logger.info("Registering projection {}.", projection.getBeanClass().getName());
+            Object projectionInstance = projection.create(beanManager.createCreationalContext(null));
+            eventHandlingConfiguration.registerEventHandler(c -> projectionInstance);
+            configurer.registerQueryHandler(c -> projectionInstance);
+        }
+
         // Register event handlers.
         for (Bean<?> eventHandler : eventHandlers) {
             logger.info("Registering event handler {}.",
@@ -431,6 +456,13 @@ public class AxonCdiExtension implements Extension {
             eventHandlingConfiguration.registerEventHandler(
                     c -> eventHandler.create(
                             beanManager.createCreationalContext(null)));
+        }
+
+        // Register query handlers.
+        for (Bean<?> queryHandler : queryHandlers) {
+            logger.info("Registering query handler {}.", queryHandler.getBeanClass().getName());
+
+            configurer.registerQueryHandler(c -> queryHandler.create(beanManager.createCreationalContext(null)));
         }
 
         // Event bus registration.
@@ -536,6 +568,10 @@ public class AxonCdiExtension implements Extension {
                 new BeanWrapper<>(CommandBus.class, configuration::commandBus));
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(CommandGateway.class, configuration::commandGateway));
+        afterBeanDiscovery.addBean(
+                new BeanWrapper<>(QueryBus.class, configuration::queryBus));
+        afterBeanDiscovery.addBean(
+                new BeanWrapper<>(QueryGateway.class, configuration::queryGateway));
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(EventBus.class, configuration::eventBus));
 
