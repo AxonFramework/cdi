@@ -35,7 +35,7 @@ The base Axon Framework is extremely powerful and flexible. What this extension 
 You can provide configuration overrides for the following Axon artifacts by creating CDI producers for them:
 * [EntityManagerProvider](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/jpa/EntityManagerProvider.html)
 * [EventStorageEngine](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventsourcing/eventstore/EventStorageEngine.html)
-* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA)
+* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA. For your convenience, we have provided a JtaTransactionManager that should work in most CMT and BMT situations.)
 * [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
 * [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
 * [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
@@ -83,7 +83,7 @@ Maven target: `mvn package exec:java`
 
 If you want to use the JPA based event store inside of a container (e.g. Payara or WildFly), you have to configure the following facilities:
 * [EntityManagerProvider](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/jpa/EntityManagerProvider.html)
-* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA)
+* [TransactionManager](http://www.axonframework.org/apidocs/3.3/org/axonframework/common/transaction/TransactionManager.html) (in case of JTA, make sure this is a transaction manager that will work with JTA. For your convenience, we have provided a JtaTransactionManager that should work in most CMT and BMT situations.)
 * [EventStorageEngine](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventsourcing/eventstore/EventStorageEngine.html)
 * [TokenStore](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/tokenstore/TokenStore.html)
 
