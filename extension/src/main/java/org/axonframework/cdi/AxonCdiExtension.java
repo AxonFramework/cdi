@@ -2,7 +2,9 @@ package org.axonframework.cdi;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
@@ -21,6 +23,7 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import javax.inject.Named;
 
 import org.axonframework.cdi.stereotype.Aggregate;
+import org.axonframework.cdi.stereotype.Saga;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -30,10 +33,12 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -57,6 +62,7 @@ public class AxonCdiExtension implements Extension {
     private Configuration configuration;
 
     private final List<Class<?>> aggregates = new ArrayList<>();
+    private final List<SagaDefinition> sagas = new ArrayList<>();
     private final List<Bean<?>> eventHandlers = new ArrayList<>();
     private final List<Bean<?>> queryHandlers = new ArrayList<>();
     private final List<Bean<?>> projections = new ArrayList<>();
@@ -81,6 +87,8 @@ public class AxonCdiExtension implements Extension {
             = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers
             = new ArrayList<>();
+    private final Map<String, Producer<SagaStore>> sagaStoreProducerMap = new HashMap<>();
+    private final Map<String, Producer<SagaConfiguration<?>>> sagaConfigurationProducerMap = new HashMap<>();
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -103,6 +111,15 @@ public class AxonCdiExtension implements Extension {
         aggregates.add(clazz);
     }
 
+    <T> void processSaga(@Observes @WithAnnotations({Saga.class})
+                              final ProcessAnnotatedType<T> processAnnotatedType) {
+        final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
+
+        logger.debug("Found Saga: {}.", clazz);
+
+        sagas.add(new SagaDefinition(clazz));
+    }
+
     // Antoine: While processing the producers, I can detect configuration
     // errors from an Axon standpoint. These errors should result in the
     // deployment failing. Should I wait to throw these validation errors until
@@ -113,7 +130,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for an event storage engine producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processEventStorageEngineProducer(
             @Observes final ProcessProducer<T, EventStorageEngine> processProducer) {
@@ -125,11 +141,20 @@ public class AxonCdiExtension implements Extension {
         this.eventStorageEngineProducer = processProducer.getProducer();
     }
 
+    <T> void processSagaConfigurationProducer(
+            @Observes final ProcessProducer<T, SagaConfiguration<?>> processProducer) {
+        logger.debug("Producer for SagaConfiguration found: {}.",
+                     processProducer.getProducer());
+
+        String sagaConfigName = extractBeanName(processProducer.getAnnotatedMember());
+
+        sagaConfigurationProducerMap.put(sagaConfigName, processProducer.getProducer());
+    }
+
     /**
      * Scans for a configurer producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processConfigurerProducer(
             @Observes final ProcessProducer<T, Configurer> processProducer) {
@@ -144,7 +169,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for a transaction manager producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processTransactionManagerProducer(
             @Observes final ProcessProducer<T, TransactionManager> processProducer) {
@@ -160,7 +184,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for a serializer producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processSerializerProducer(
             @Observes final ProcessProducer<T, Serializer> processProducer) {
@@ -198,7 +221,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for an event bus producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processEventBusProducer(
             @Observes final ProcessProducer<T, EventBus> processProducer) {
@@ -213,7 +235,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for a command bus producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processCommandBusProducer(
             @Observes final ProcessProducer<T, CommandBus> processProducer) {
@@ -239,7 +260,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for an entity manager provider producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processEntityManagerProviderProducer(
             @Observes final ProcessProducer<T, EntityManagerProvider> processProducer) {
@@ -257,7 +277,6 @@ public class AxonCdiExtension implements Extension {
      * Scans for a token store producer.
      *
      * @param processProducer process producer event.
-     * @param beanManager bean manager.
      */
     <T> void processTokenStoreProducer(
             @Observes final ProcessProducer<T, TokenStore> processProducer) {
@@ -317,6 +336,17 @@ public class AxonCdiExtension implements Extension {
         logger.debug("Producer for ModuleConfiguration: {}.", processProducer.getProducer());
 
         this.moduleConfigurationProducers.add(processProducer.getProducer());
+    }
+
+    <T> void processSagaStoreProducer(
+            @Observes final ProcessProducer<T, SagaStore> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for SagaSTore: {}.", processProducer.getProducer());
+
+        String sagaStoreName = extractBeanName(processProducer.getAnnotatedMember());
+
+        this.sagaStoreProducerMap.put(sagaStoreName, processProducer.getProducer());
     }
 
     <T> void processEventUpcasterProducer(
@@ -567,11 +597,15 @@ public class AxonCdiExtension implements Extension {
             configurer.configureEmbeddedEventStore(c -> eventStorageEngine);
         }
 
+        registerSagaStore(beanManager, configurer);
+
         // Register aggregates.
-        aggregates.forEach(aggregate -> {
-            logger.info("Registering aggregate {}", aggregate.getSimpleName());
-            configurer.configureAggregate(aggregate);
+        aggregates.forEach(aggregateType -> {
+            logger.info("Registering aggregate {}.", aggregateType.getSimpleName());
+            configurer.configureAggregate(aggregateType);
         });
+
+        registerSagas(beanManager, afterBeanDiscovery, configurer);
 
         logger.info("Starting Axon configuration.");
         configuration = configurer.buildConfiguration();
@@ -598,10 +632,61 @@ public class AxonCdiExtension implements Extension {
         configuration.shutdown();
     }
 
+    private void registerSagaStore(BeanManager beanManager, Configurer configurer) {
+        sagaStoreProducerMap.keySet()
+                            .stream()
+                            .filter(storeName -> sagas.stream()
+                                                      .filter(sd -> sd.sagaStore().isPresent())
+                                                      .map(sd -> sd.sagaStore().get())
+                                                      .noneMatch(storeName::equals))
+                            .findFirst()
+                            .ifPresent(storeName -> {
+                                SagaStore sagaStore = sagaStoreProducerMap.get(storeName)
+                                                                          .produce(beanManager
+                                                                                           .createCreationalContext(null));
+                                logger.info("Registering saga store {}.", sagaStore.getClass().getSimpleName());
+                                configurer.registerComponent(SagaStore.class, c -> sagaStore);
+                            });
+    }
+
+    private void registerSagas(BeanManager beanManager, AfterBeanDiscovery afterBeanDiscovery, Configurer configurer) {
+        sagas.forEach(sagaDefinition -> {
+            logger.info("Registering saga {}.", sagaDefinition.sagaType().getSimpleName());
+
+            if (!sagaDefinition.explicitConfiguration() &&
+                    !sagaConfigurationProducerMap.containsKey(sagaDefinition.configurationName())) {
+
+                SagaConfiguration<?> sagaConfiguration = SagaConfiguration
+                        .subscribingSagaManager(sagaDefinition.sagaType());
+
+                afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
+                                                             SagaConfiguration.class,
+                                                             () -> sagaConfiguration));
+
+                sagaDefinition.sagaStore()
+                              .ifPresent(sagaStore -> sagaConfiguration
+                                      .configureSagaStore(c -> sagaStoreProducerMap.get(sagaStore)
+                                                                                   .produce(beanManager
+                                                                                                    .createCreationalContext(
+                                                                                                            null))));
+                configurer.registerModule(sagaConfiguration);
+            }
+        });
+    }
+
     private <T> void addIfNotConfigured(Class<T> componentType, Producer<T> componentProducer,
                                         Supplier<T> componentSupplier, AfterBeanDiscovery afterBeanDiscovery) {
         if (componentProducer == null) {
             afterBeanDiscovery.addBean(new BeanWrapper<>(componentType, componentSupplier));
         }
+    }
+
+    private String extractBeanName(AnnotatedMember<?> annotatedMember) {
+        String beanName = annotatedMember.getJavaMember().getName();
+        Named named = annotatedMember.getAnnotation(Named.class);
+        if (named != null && !"".equals(named.value())) {
+            beanName = named.value();
+        }
+        return beanName;
     }
 }
