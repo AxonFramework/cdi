@@ -3,6 +3,7 @@ package org.axonframework.cdi;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
@@ -65,6 +66,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<Serializer> eventSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
+    private Producer<CommandGateway> commandGatewayProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
@@ -74,6 +76,7 @@ public class AxonCdiExtension implements Extension {
     private final List<Producer<CorrelationDataProvider>> correlationDataProviderProducers
             = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
+    private Producer<QueryGateway> queryGatewayProducer;
     private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers
             = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers
@@ -222,6 +225,16 @@ public class AxonCdiExtension implements Extension {
         this.commandBusProducer = processProducer.getProducer();
     }
 
+    <T> void processCommandGatewayProducer(
+            @Observes final ProcessProducer<T, CommandGateway> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for CommandGateway found: {}.",
+                     processProducer.getProducer());
+
+        this.commandGatewayProducer = processProducer.getProducer();
+    }
+
     /**
      * Scans for an entity manager provider producer.
      *
@@ -288,6 +301,15 @@ public class AxonCdiExtension implements Extension {
         logger.debug("Producer for QueryBus: {}.", processProducer.getProducer());
 
         this.queryBusProducer = processProducer.getProducer();
+    }
+
+    <T> void processQueryGatewayProducer(
+            @Observes final ProcessProducer<T, QueryGateway> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for QueryGateway: {}.", processProducer.getProducer());
+
+        this.queryGatewayProducer = processProducer.getProducer();
     }
 
     <T> void processModuleConfigurationProducer(
@@ -556,30 +578,30 @@ public class AxonCdiExtension implements Extension {
         configuration.start();
 
         logger.info("Registering Axon APIs with CDI.");
-        
+
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> configuration));
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(CommandBus.class, configuration::commandBus));
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(CommandGateway.class, configuration::commandGateway));
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(QueryBus.class, configuration::queryBus));
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(QueryGateway.class, configuration::queryGateway));
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(EventBus.class, configuration::eventBus));
-
-        // If there was no serializer producer, register the serializer as a bean.
-        if (this.serializerProducer == null) {
-            afterBeanDiscovery.addBean(
-                    new BeanWrapper<>(Serializer.class, configuration::serializer));
-        }
+        addIfNotConfigured(CommandBus.class, commandBusProducer, configuration::commandBus, afterBeanDiscovery);
+        addIfNotConfigured(CommandGateway.class,
+                           commandGatewayProducer,
+                           configuration::commandGateway,
+                           afterBeanDiscovery);
+        addIfNotConfigured(QueryBus.class, queryBusProducer, configuration::queryBus, afterBeanDiscovery);
+        addIfNotConfigured(QueryGateway.class, queryGatewayProducer, configuration::queryGateway, afterBeanDiscovery);
+        addIfNotConfigured(EventBus.class, eventBusProducer, configuration::eventBus, afterBeanDiscovery);
+        addIfNotConfigured(Serializer.class, serializerProducer, configuration::serializer, afterBeanDiscovery);
 
         logger.info("Axon Framework configuration complete.");
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
         configuration.shutdown();
+    }
+
+    private <T> void addIfNotConfigured(Class<T> componentType, Producer<T> componentProducer,
+                                        Supplier<T> componentSupplier, AfterBeanDiscovery afterBeanDiscovery) {
+        if (componentProducer == null) {
+            afterBeanDiscovery.addBean(new BeanWrapper<>(componentType, componentSupplier));
+        }
     }
 }
