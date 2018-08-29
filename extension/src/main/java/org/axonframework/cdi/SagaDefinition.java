@@ -20,19 +20,11 @@ class SagaDefinition {
     }
 
     Optional<String> sagaStore() {
-        String sagaStore = getSagaAnnotation().sagaStore();
-        if ("".equals(sagaStore)) {
-            return Optional.empty();
-        }
-        return Optional.of(sagaStore);
+        return createOptional(getSagaAnnotation().sagaStore());
     }
 
     Optional<String> configurationBean() {
-        String configurationBean = getSagaAnnotation().configurationBean();
-        if ("".equals(configurationBean)) {
-            return Optional.empty();
-        }
-        return Optional.of(configurationBean);
+        return createOptional(getSagaAnnotation().configurationBean());
     }
 
     boolean explicitConfiguration() {
@@ -49,5 +41,12 @@ class SagaDefinition {
 
     private String lcFirst(String string) {
         return string.substring(0, 1).toLowerCase() + string.substring(1);
+    }
+
+    private Optional<String> createOptional(String value) {
+        if ("".equals(value)) {
+            return Optional.empty();
+        }
+        return Optional.of(value);
     }
 }
