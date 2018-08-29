@@ -1,6 +1,6 @@
 # Axon Framework CDI Support
 
-This Axon Framework module provides support for the [CDI](http://cdi-spec.org) programming model. It is a CDI portable extension integrating the Axon Framework and providing some intelligent defaults while still allowing for configuring overrides.
+This [Axon Framework](https://axoniq.io) module provides support for the [CDI](http://cdi-spec.org) programming model. It is a CDI portable extension integrating the Axon Framework and providing some intelligent defaults while still allowing for configuring overrides.
 
 The current minimum supported versions are:
 
