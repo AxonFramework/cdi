@@ -94,7 +94,7 @@ Please see the examples for details.
 The module currently does not support sagas, snapshoters and subscription queries. Such support will be added as soon as possible.
 
 ## Known Issues
-The following are the known issues with the extension. Please also look at our [GitHub issue tracker](/issues).
+The following are the known issues with the extension. Please also look at our [GitHub issue tracker](https://github.com/AxonFramework/cdi/issues).
 * We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 * We have tested but do not currently support TomEE Plus due to OpenJPA issues that do not exist with TomEE Plume and EclipseLink.
 
