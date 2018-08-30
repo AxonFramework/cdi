@@ -36,6 +36,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.AggregateConfigurer;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
@@ -100,7 +101,9 @@ public class AxonCdiExtension implements Extension {
     private Producer<QueryBus> queryBusProducer;
     private Producer<QueryGateway> queryGatewayProducer;
     private Producer<QueryUpdateEmitter> queryUpdateEmitterProducer;
+    // TODO: 8/30/2018 check how to lazily configure module configurations
     private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
+    private final List<Producer<ConfigurerModule>> configurerModuleProducers = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
     private Producer<DeadlineManager> deadlineManagerProducer;
 
@@ -399,6 +402,13 @@ public class AxonCdiExtension implements Extension {
         this.moduleConfigurationProducers.add(processProducer.getProducer());
     }
 
+    <T> void processConfigurerModuleProducer(
+            @Observes final ProcessProducer<T, ConfigurerModule> processProducer) {
+        logger.debug("Producer for ConfigurerModule: {}.", processProducer.getProducer());
+
+        this.configurerModuleProducers.add(processProducer.getProducer());
+    }
+
     <T> void processSagaStoreProducer(
             @Observes final ProcessProducer<T, SagaStore> processProducer) {
         logger.debug("Producer for SagaSTore: {}.", processProducer.getProducer());
@@ -533,6 +543,13 @@ public class AxonCdiExtension implements Extension {
             eventHandlingConfiguration = new EventHandlingConfiguration();
             configurer.registerModule(eventHandlingConfiguration);
         }
+
+        // Configurer modules registration
+        configurerModuleProducers.forEach(producer -> {
+            ConfigurerModule configurerModule = produce(beanManager, producer);
+            logger.info("Configuring module {}.", configurerModule.getClass().getSimpleName());
+            configurerModule.configureModule(configurer);
+        });
 
         // Register projections.
         for (Bean<?> projection : projections) {
