@@ -134,10 +134,15 @@
                             <container>
                                 <containerId>tomee7x</containerId>
                                 <zipUrlInstaller>
-                                    <url>http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.5/apache-tomee-7.0.5-plume.zip</url>
+                                    <url>http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.5/apache-tomee-7.0.5-webprofile.zip</url>
                                 </zipUrlInstaller>
                             </container>
                         </configuration>
+                    </plugin>
+                    <plugin> <!-- mvn tomee:run -Ptomee -->
+                        <groupId>org.apache.tomee.maven</groupId>
+                        <artifactId>tomee-maven-plugin</artifactId>
+                        <version>7.0.5</version>
                     </plugin>
                 </plugins>
             </build>
