@@ -66,7 +66,7 @@ For convenience, we have added Cargo configurations in separate Maven profiles f
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 * To run the example against JBoss EAP, simply execute the Maven target: `mvn package cargo:run -Pjboss`
-* To run the example against TomEE, simply execute the Maven target: `mvn package cargo:run -Ptomee` or `mvn package tomee:run -Ptomee`
+* To run the example against TomEE, simply execute the Maven target: `mvn package cargo:run -Ptomee`
 
 ### Java SE
 The [Java SE](/example/javase) example demonstrates usage in a non-Java EE, Java SE environment that is CDI enabled (that could include a Servlet-only 
