@@ -8,6 +8,9 @@
         <!-- TODO Eliminate this using provider-specific programmatic
              registration APIs. This will confuse most users. -->
         <!-- TODO Double-check that this is a complete list -->
+        <class>org.axonframework.eventsourcing.eventstore.AbstractEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.AbstractDomainEventEntry</class>
+        <class>org.axonframework.eventsourcing.eventstore.AbstractSequencedDomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
         <class>org.axonframework.eventhandling.saga.repository.jpa.AssociationValueEntry</class>
