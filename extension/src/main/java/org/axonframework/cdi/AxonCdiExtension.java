@@ -84,6 +84,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
     private Producer<Serializer> eventSerializerProducer;
+    private Producer<Serializer> messageSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
     private Producer<CommandGateway> commandGatewayProducer;
@@ -235,13 +236,15 @@ public class AxonCdiExtension implements Extension {
                     : namedValue;
             switch (serializerName) {
                 case "eventSerializer":
-                    logger.debug("Producer for EventSerializer found: {}.",
-                            processProducer.getProducer());
+                    logger.debug("Producer for EventSerializer found: {}.", processProducer.getProducer());
                     eventSerializerProducer = processProducer.getProducer();
                     break;
+                case "messageSerializer":
+                    logger.debug("Producer for MessageSerializer found: {}.", processProducer.getProducer());
+                    messageSerializerProducer = processProducer.getProducer();
+                    break;
                 case "serializer":
-                    logger.debug("Producer for Serializer found: {}.",
-                            processProducer.getProducer());
+                    logger.debug("Producer for Serializer found: {}.", processProducer.getProducer());
                     this.serializerProducer = processProducer.getProducer();
                     break;
                 default:
@@ -446,8 +449,7 @@ public class AxonCdiExtension implements Extension {
         if (this.serializerProducer != null) {
             final Serializer serializer = produce(beanManager, serializerProducer);
 
-            logger.info("Registering serializer {}.",
-                    serializer.getClass().getSimpleName());
+            logger.info("Registering serializer {}.", serializer.getClass().getSimpleName());
 
             configurer.configureSerializer(c -> serializer);
         }
@@ -456,10 +458,18 @@ public class AxonCdiExtension implements Extension {
         if (this.eventSerializerProducer != null) {
             final Serializer serializer = produce(beanManager, eventSerializerProducer);
 
-            logger.info("Registering event serializer {}.",
-                    serializer.getClass().getSimpleName());
+            logger.info("Registering event serializer {}.", serializer.getClass().getSimpleName());
 
             configurer.configureEventSerializer(c -> serializer);
+        }
+
+        // Message Serializer registration.
+        if (this.messageSerializerProducer != null) {
+            final Serializer serializer = produce(beanManager, messageSerializerProducer);
+
+            logger.info("Registering message serializer {}.", serializer.getClass().getSimpleName());
+
+            configurer.configureMessageSerializer(c -> serializer);
         }
 
         // Transaction manager registration.
