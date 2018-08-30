@@ -134,7 +134,7 @@
                             <container>
                                 <containerId>tomee7x</containerId>
                                 <zipUrlInstaller>
-                                    <url>http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.5/apache-tomee-7.0.5-webprofile.zip</url>
+                                    <url>http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.5/apache-tomee-7.0.5-plume.zip</url>
                                 </zipUrlInstaller>
                             </container>
                         </configuration>
