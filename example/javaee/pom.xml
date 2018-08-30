@@ -139,11 +139,6 @@
                             </container>
                         </configuration>
                     </plugin>
-                    <plugin> <!-- mvn tomee:run -Ptomee -->
-                        <groupId>org.apache.tomee.maven</groupId>
-                        <artifactId>tomee-maven-plugin</artifactId>
-                        <version>7.0.5</version>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
