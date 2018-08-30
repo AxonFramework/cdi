@@ -6,7 +6,7 @@
              version="2.1">
     <persistence-unit name="account">
         <!-- TODO Eliminate this using provider-specific programmatic
-             registration APIs. This will confuse most users. -->
+        registration APIs. This will confuse most users. -->
         <!-- TODO Double-check that this is a complete list -->
         <class>org.axonframework.eventsourcing.eventstore.AbstractEventEntry</class>
         <class>org.axonframework.eventsourcing.eventstore.AbstractDomainEventEntry</class>
@@ -20,10 +20,10 @@
         <properties>
             <property name="javax.persistence.schema-generation.database.action"
                       value="drop-and-create"/>
-            <property name="openjpa.jdbc.SynchronizeMappings"    value="buildSchema"/>
+            <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema"/>
             <property name="eclipselink.logging.level.sql" value="FINE"/>
             <property name="eclipselink.logging.parameters" value="true"/>
-            <property name = "hibernate.show_sql" value = "true" />
+            <property name="hibernate.show_sql" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>
