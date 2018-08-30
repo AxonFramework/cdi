@@ -39,6 +39,7 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.DeadlineManager;
@@ -101,11 +102,12 @@ public class AxonCdiExtension implements Extension {
     private Producer<QueryBus> queryBusProducer;
     private Producer<QueryGateway> queryGatewayProducer;
     private Producer<QueryUpdateEmitter> queryUpdateEmitterProducer;
-    // TODO: 8/30/2018 check how to lazily configure module configurations
     private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
     private final List<Producer<ConfigurerModule>> configurerModuleProducers = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
     private Producer<DeadlineManager> deadlineManagerProducer;
+    private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
+    private Producer<EventProcessingConfiguration> eventProcessingConfigurationProducer;
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -402,6 +404,24 @@ public class AxonCdiExtension implements Extension {
         this.moduleConfigurationProducers.add(processProducer.getProducer());
     }
 
+    <T> void processEventHandlingConfigurationProducer(
+            @Observes final ProcessProducer<T, EventHandlingConfiguration> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for EventHandlingConfiguration: {}.", processProducer.getProducer());
+
+        this.eventHandlingConfigurationProducer = processProducer.getProducer();
+    }
+
+    <T> void processEventProcessingConfigurationProducer(
+            @Observes final ProcessProducer<T, EventProcessingConfiguration> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for EventProcessingConfiguration: {}.", processProducer.getProducer());
+
+        this.eventProcessingConfigurationProducer = processProducer.getProducer();
+    }
+
     <T> void processConfigurerModuleProducer(
             @Observes final ProcessProducer<T, ConfigurerModule> processProducer) {
         logger.debug("Producer for ConfigurerModule: {}.", processProducer.getProducer());
@@ -515,8 +535,7 @@ public class AxonCdiExtension implements Extension {
 
         // Command bus registration.
         if (this.commandBusProducer != null) {
-            final CommandBus commandBus = this.commandBusProducer.produce(
-                    beanManager.createCreationalContext(null));
+            final CommandBus commandBus = produce(beanManager, commandBusProducer);
 
             logger.info("Registering command bus {}.", commandBus.getClass().getSimpleName());
 
@@ -525,23 +544,45 @@ public class AxonCdiExtension implements Extension {
             logger.info("No command bus producer found, using default simple command bus.");
         }
 
-        // Event handling configuration registration.
-        EventHandlingConfiguration eventHandlingConfiguration = null;
 
+        // Module configurations registration.
+        // TODO: 8/30/2018 :
+        // There is a possible issue with following construct:
+        // @Produce
+        // public ModuleConfiguration eventHandlingConfiguration() {
+        //     return new EventHandlingConfiguration();
+        // }
+        // It will be registered as module configuration only and not as EventHandlingConfiguration! This will result
+        // in having double EventHandlingConfiguration within Configuration. The same applies to EventProcessingConfiguration.
         for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
-            ModuleConfiguration moduleConfiguration
-                    = producer.produce(beanManager.createCreationalContext(null));
-            logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
-            configurer.registerModule(moduleConfiguration);
-
-            if (moduleConfiguration instanceof EventHandlingConfiguration) {
-                eventHandlingConfiguration = (EventHandlingConfiguration) moduleConfiguration;
-            }
+            configurer.registerModule(new LazyRetrievedModuleConfiguration(() -> {
+                ModuleConfiguration moduleConfiguration
+                        = producer.produce(beanManager.createCreationalContext(null));
+                logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
+                return moduleConfiguration;
+            }));
         }
 
-        if (eventHandlingConfiguration == null) {
+        // Event handling configuration registration.
+        EventHandlingConfiguration eventHandlingConfiguration;
+        if (eventHandlingConfigurationProducer != null) {
+            eventHandlingConfiguration = produce(beanManager, eventHandlingConfigurationProducer);
+        } else {
             eventHandlingConfiguration = new EventHandlingConfiguration();
-            configurer.registerModule(eventHandlingConfiguration);
+        }
+        logger.info("Registering event handling configuration {}.",
+                    eventHandlingConfiguration.getClass().getSimpleName());
+        configurer.registerModule(eventHandlingConfiguration);
+
+        // Event processing configuration registration.
+        if (eventProcessingConfigurationProducer != null) {
+            EventProcessingConfiguration eventProcessingConfiguration =
+                    produce(beanManager, eventProcessingConfigurationProducer);
+
+            logger.info("Registering event processing configuration {}.",
+                        eventProcessingConfiguration.getClass().getSimpleName());
+
+            configurer.registerModule(eventProcessingConfiguration);
         }
 
         // Configurer modules registration
@@ -683,11 +724,9 @@ public class AxonCdiExtension implements Extension {
         registerSagas(beanManager, afterBeanDiscovery, configurer);
 
         logger.info("Starting Axon configuration.");
-        configuration = configurer.buildConfiguration();
-        configuration.start();
+        configuration = configurer.start();
 
         logger.info("Registering Axon APIs with CDI.");
-
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> configuration));
         addIfNotConfigured(CommandBus.class, commandBusProducer, configuration::commandBus, afterBeanDiscovery);
