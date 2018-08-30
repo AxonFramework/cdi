@@ -40,6 +40,7 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.config.SagaConfiguration;
+import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
@@ -101,6 +102,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<QueryUpdateEmitter> queryUpdateEmitterProducer;
     private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
+    private Producer<DeadlineManager> deadlineManagerProducer;
 
     // Antoine: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
@@ -381,6 +383,15 @@ public class AxonCdiExtension implements Extension {
         this.queryUpdateEmitterProducer = processProducer.getProducer();
     }
 
+    <T> void processDeadlineManagerProducer(
+            @Observes final ProcessProducer<T, DeadlineManager> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for DeadlineManager: {}.", processProducer.getProducer());
+
+        this.deadlineManagerProducer = processProducer.getProducer();
+    }
+
     <T> void processModuleConfigurationProducer(
             @Observes final ProcessProducer<T, ModuleConfiguration> processProducer) {
         logger.debug("Producer for ModuleConfiguration: {}.", processProducer.getProducer());
@@ -630,6 +641,15 @@ public class AxonCdiExtension implements Extension {
             logger.info("Registering query update emitter {}.", queryUpdateEmitter.getClass().getSimpleName());
 
             configurer.configureQueryUpdateEmitter(c -> queryUpdateEmitter);
+        }
+
+        // DeadlineManager registration.
+        if (this.deadlineManagerProducer != null) {
+            DeadlineManager deadlineManager = produce(beanManager, deadlineManagerProducer);
+
+            logger.info("Registering deadline manager {}.", deadlineManager.getClass().getSimpleName());
+
+            configurer.registerComponent(DeadlineManager.class, c -> deadlineManager);
         }
 
         // Event storage engine registration.
