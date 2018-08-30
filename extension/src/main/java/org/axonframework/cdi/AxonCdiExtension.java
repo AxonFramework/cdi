@@ -52,6 +52,7 @@ import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
@@ -97,6 +98,7 @@ public class AxonCdiExtension implements Extension {
     private final List<Producer<CorrelationDataProvider>> correlationDataProviderProducers = new ArrayList<>();
     private Producer<QueryBus> queryBusProducer;
     private Producer<QueryGateway> queryGatewayProducer;
+    private Producer<QueryUpdateEmitter> queryUpdateEmitterProducer;
     private final List<Producer<ModuleConfiguration>> moduleConfigurationProducers = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
 
@@ -370,6 +372,15 @@ public class AxonCdiExtension implements Extension {
         this.queryGatewayProducer = processProducer.getProducer();
     }
 
+    <T> void processQueryUpdateEmitterProducer(
+            @Observes final ProcessProducer<T, QueryUpdateEmitter> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for QueryUpdateEmitter: {}.", processProducer.getProducer());
+
+        this.queryUpdateEmitterProducer = processProducer.getProducer();
+    }
+
     <T> void processModuleConfigurationProducer(
             @Observes final ProcessProducer<T, ModuleConfiguration> processProducer) {
         logger.debug("Producer for ModuleConfiguration: {}.", processProducer.getProducer());
@@ -476,8 +487,7 @@ public class AxonCdiExtension implements Extension {
         if (this.transactionManagerProducer != null) {
             final TransactionManager transactionManager = produce(beanManager, transactionManagerProducer);
 
-            logger.info("Registering transaction manager {}.",
-                    transactionManager.getClass().getSimpleName());
+            logger.info("Registering transaction manager {}.", transactionManager.getClass().getSimpleName());
 
             configurer.configureTransactionManager(c -> transactionManager);
         }
@@ -487,8 +497,7 @@ public class AxonCdiExtension implements Extension {
             final CommandBus commandBus = this.commandBusProducer.produce(
                     beanManager.createCreationalContext(null));
 
-            logger.info("Registering command bus {}.",
-                    commandBus.getClass().getSimpleName());
+            logger.info("Registering command bus {}.", commandBus.getClass().getSimpleName());
 
             configurer.configureCommandBus(c -> commandBus);
         } else {
@@ -501,8 +510,7 @@ public class AxonCdiExtension implements Extension {
         for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
             ModuleConfiguration moduleConfiguration
                     = producer.produce(beanManager.createCreationalContext(null));
-            logger.info("Registering module configuration {}.",
-                    moduleConfiguration.getClass().getSimpleName());
+            logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
             configurer.registerModule(moduleConfiguration);
 
             if (moduleConfiguration instanceof EventHandlingConfiguration) {
@@ -525,12 +533,10 @@ public class AxonCdiExtension implements Extension {
 
         // Register event handlers.
         for (Bean<?> eventHandler : eventHandlers) {
-            logger.info("Registering event handler {}.",
-                    eventHandler.getBeanClass().getName());
+            logger.info("Registering event handler {}.", eventHandler.getBeanClass().getName());
 
             eventHandlingConfiguration.registerEventHandler(
-                    c -> eventHandler.create(
-                            beanManager.createCreationalContext(null)));
+                    c -> eventHandler.create(beanManager.createCreationalContext(null)));
         }
 
         // Register query handlers.
@@ -599,13 +605,31 @@ public class AxonCdiExtension implements Extension {
                     configurer.registerEventUpcaster(c -> eventUpcaster);
                 });
 
-        // Error handler registration.
+        // QueryBus registration.
         if (this.queryBusProducer != null) {
             QueryBus queryBus = produce(beanManager, queryBusProducer);
 
             logger.info("Registering query bus {}.", queryBus.getClass().getSimpleName());
 
             configurer.configureQueryBus(c -> queryBus);
+        }
+
+        // QueryGateway registration.
+        if (this.queryGatewayProducer != null) {
+            QueryGateway queryGateway = produce(beanManager, queryGatewayProducer);
+
+            logger.info("Registering query gateway {}.", queryGateway.getClass().getSimpleName());
+
+            configurer.registerComponent(QueryGateway.class, c -> queryGateway);
+        }
+
+        // QueryUpdateEmitter registration.
+        if (this.queryUpdateEmitterProducer != null) {
+            QueryUpdateEmitter queryUpdateEmitter = produce(beanManager, queryUpdateEmitterProducer);
+
+            logger.info("Registering query update emitter {}.", queryUpdateEmitter.getClass().getSimpleName());
+
+            configurer.configureQueryUpdateEmitter(c -> queryUpdateEmitter);
         }
 
         // Event storage engine registration.
@@ -636,6 +660,10 @@ public class AxonCdiExtension implements Extension {
                            afterBeanDiscovery);
         addIfNotConfigured(QueryBus.class, queryBusProducer, configuration::queryBus, afterBeanDiscovery);
         addIfNotConfigured(QueryGateway.class, queryGatewayProducer, configuration::queryGateway, afterBeanDiscovery);
+        addIfNotConfigured(QueryUpdateEmitter.class,
+                           queryUpdateEmitterProducer,
+                           configuration::queryUpdateEmitter,
+                           afterBeanDiscovery);
         addIfNotConfigured(EventBus.class, eventBusProducer, configuration::eventBus, afterBeanDiscovery);
         addIfNotConfigured(Serializer.class, serializerProducer, configuration::serializer, afterBeanDiscovery);
 
