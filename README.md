@@ -8,7 +8,7 @@ The current minimum supported versions are:
 * CDI 1.1/Java EE 7
 * Java SE 8
  
-We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE Plume. We will test the module with Thorntail (formerly WildFly Swarm) and WebSphere Liberty/Open Liberty. Contributions testing against WebSphere classic and WebLogic are welcome.
+We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE. We will test the module with Thorntail (formerly WildFly Swarm) and WebSphere Liberty/Open Liberty. Contributions testing against WebSphere classic and WebLogic are welcome.
 
 ## Usage
 
@@ -60,13 +60,13 @@ Event handlers and query handlers must be CDI beans. They will be automatically 
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE Plume.
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE.
 
 For convenience, we have added Cargo configurations in separate Maven profiles for each supported and tested application server.
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 * To run the example against JBoss EAP, simply execute the Maven target: `mvn package cargo:run -Pjboss`
-* To run the example against TomEE Plume, simply execute the Maven target: `mvn package cargo:run -Ptomee`
+* To run the example against TomEE, simply execute the Maven target: `mvn package cargo:run -Ptomee` or `mvn package tomee:run -Ptomee`
 
 ### Java SE
 The [Java SE](/example/javase) example demonstrates usage in a non-Java EE, Java SE environment that is CDI enabled (that could include a Servlet-only 
@@ -96,7 +96,6 @@ The module currently does not support sagas, snapshoters and subscription querie
 ## Known Issues
 The following are the known issues with the extension. Please also look at our [GitHub issue tracker](https://github.com/AxonFramework/cdi/issues).
 * We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
-* We have tested but do not currently support TomEE Plus due to OpenJPA issues that do not exist with TomEE Plume and EclipseLink.
 
 ## Acknowledgements
 The work for Axon to support CDI started in the community. The earliest CDI support for Axon came from the following folks:
