@@ -122,6 +122,26 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>tomee</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.cargo</groupId>
+                        <artifactId>cargo-maven2-plugin</artifactId>
+                        <version>1.6.9</version>
+                        <configuration>
+                            <container>
+                                <containerId>tomee7x</containerId>
+                                <zipUrlInstaller>
+                                    <url>http://repo.maven.apache.org/maven2/org/apache/tomee/apache-tomee/7.0.5/apache-tomee-7.0.5-webprofile.zip</url>
+                                </zipUrlInstaller>
+                            </container>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!--
         <profile>
             <id>payara</id>

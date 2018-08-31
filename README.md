@@ -1,6 +1,6 @@
 # Axon Framework CDI Support
 
-This Axon Framework module provides support for the CDI programming model. It is a CDI portable extension integrating the Axon Framework and providing some intelligent defaults while still allowing for configuring overrides.
+This [Axon Framework](https://axoniq.io) module provides support for the [CDI](http://cdi-spec.org) programming model. It is a CDI portable extension integrating the Axon Framework and providing some intelligent defaults while still allowing for configuring overrides.
 
 The current minimum supported versions are:
 
@@ -8,7 +8,7 @@ The current minimum supported versions are:
 * CDI 1.1/Java EE 7
 * Java SE 8
  
-We have so far tested sucessfully against Payara, WildFly and JBoss EAP. We will test the module with Thorntail (formerly WildFly Swarm), WebSphere Liberty/Open Liberty and TomEE. Contributions testing against WebSphere classic and WebLogic are welcome. We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
+We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE. We will test the module with Thorntail (formerly WildFly Swarm) and WebSphere Liberty/Open Liberty. Contributions testing against WebSphere classic and WebLogic are welcome.
 
 ## Usage
 
@@ -21,7 +21,7 @@ The artifact is not yet released to Maven Central and you have to build it local
       </dependency>
 
 ### Automatic Configuration
-The base Axon Framework is extremely powerful and flexible. What this extension does is to provide a number of sensible defaults for Axon applications while still allowing you reasonable configutation flexibility - including the ability to override defaults. As soon as you include the module in your project, you will be able to inject a number of Axon APIs into your code using CDI. These APIs represent the most important Axon Framework building blocks:
+The base Axon Framework is extremely powerful and flexible. What this extension does is to provide a number of sensible defaults for Axon applications while still allowing you reasonable configuration flexibility - including the ability to override defaults. As soon as you include the module in your project, you will be able to inject a number of Axon APIs into your code using CDI. These APIs represent the most important Axon Framework building blocks:
 
 * [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
 * [CommandGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/gateway/CommandGateway.html)
@@ -60,12 +60,13 @@ Event handlers and query handlers must be CDI beans. They will be automatically 
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly and JBoss EAP.
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE.
 
 For convenience, we have added Cargo configurations in separate Maven profiles for each supported and tested application server.
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 * To run the example against JBoss EAP, simply execute the Maven target: `mvn package cargo:run -Pjboss`
+* To run the example against TomEE, simply execute the Maven target: `mvn package cargo:run -Ptomee`
 
 ### Java SE
 The [Java SE](/example/javase) example demonstrates usage in a non-Java EE, Java SE environment that is CDI enabled (that could include a Servlet-only 
@@ -91,6 +92,10 @@ Please see the examples for details.
 
 ## Roadmap
 The module currently does not support sagas, snapshoters and subscription queries. Such support will be added as soon as possible.
+
+## Known Issues
+The following are the known issues with the extension. Please also look at our [GitHub issue tracker](https://github.com/AxonFramework/cdi/issues).
+* We have tested but do not currently support GlassFish due to numerous critical bugs that have been fixed in GlassFish derivative Payara.
 
 ## Acknowledgements
 The work for Axon to support CDI started in the community. The earliest CDI support for Axon came from the following folks:

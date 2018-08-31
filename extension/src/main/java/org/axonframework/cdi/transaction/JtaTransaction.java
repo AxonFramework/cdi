@@ -1,6 +1,7 @@
 package org.axonframework.cdi.transaction;
 
 import java.lang.invoke.MethodHandles;
+import java.util.logging.Level;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.transaction.HeuristicMixedException;
@@ -18,6 +19,8 @@ import org.slf4j.LoggerFactory;
 public class JtaTransaction implements Transaction {
 
     private static final String USER_TRANSACTION_LOCATION = "java:comp/UserTransaction";
+    private static final String JBOSS_USER_TRANSACTION_LOCATION
+            = "java:jboss/UserTransaction";
     private static final String TRANSACTION_SYNCHRONIZATION_REGISTRY_LOCATION
             = "java:comp/TransactionSynchronizationRegistry";
 
@@ -162,9 +165,19 @@ public class JtaTransaction implements Transaction {
 
     private UserTransaction getUserTransaction() {
         try {
-            return (UserTransaction) new InitialContext().lookup(USER_TRANSACTION_LOCATION);
+            logger.debug("Attempting to look up standard UserTransaction.");
+            return (UserTransaction) new InitialContext().lookup(
+                    USER_TRANSACTION_LOCATION);
         } catch (NamingException ex) {
-            logger.debug("Could not look up UserTransaction.", ex);
+            logger.debug("Could not look up standard UserTransaction.", ex);
+
+            try {
+                logger.debug("Attempting to look up JBoss proprietary UserTransaction.");
+                return (UserTransaction) new InitialContext().lookup(
+                        JBOSS_USER_TRANSACTION_LOCATION);
+            } catch (NamingException ex1) {
+                logger.debug("Could not look up JBoss proprietary UserTransaction.", ex1);
+            }
         }
 
         return null;
