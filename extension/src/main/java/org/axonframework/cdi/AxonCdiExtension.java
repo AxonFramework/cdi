@@ -12,7 +12,6 @@ import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -45,7 +44,6 @@ import org.axonframework.config.SagaConfiguration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -54,7 +52,6 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -81,9 +78,7 @@ public class AxonCdiExtension implements Extension {
     private final Map<String, Producer<SagaStore>> sagaStoreProducerMap = new HashMap<>();
     private final Map<String, Producer<SagaConfiguration<?>>> sagaConfigurationProducerMap = new HashMap<>();
 
-    private final List<Bean<?>> eventHandlers = new ArrayList<>();
-    private final List<Bean<?>> queryHandlers = new ArrayList<>();
-    private final List<Bean<?>> projections = new ArrayList<>();
+    private final List<MessageHandlingBean> messageHandlers = new ArrayList<>();
 
     private Producer<EventStorageEngine> eventStorageEngineProducer;
     private Producer<Serializer> serializerProducer;
@@ -446,27 +441,13 @@ public class AxonCdiExtension implements Extension {
     }
 
     /**
-     * Scans all beans and collects beans with {@link EventHandler} annotated
-     * methods.
+     * Scans all beans and collects beans with message handlers.
      *
      * @param processBean bean processing event.
      */
     <T> void processBean(@Observes final ProcessBean<T> processBean) {
-        final Bean<?> bean = processBean.getBean();
-
-        boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
-        boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
-
-        if (isEventHandler && isQueryHandler) {
-            logger.debug("Found projection {}.", bean.getBeanClass().getSimpleName());
-            projections.add(bean);
-        } else if (isEventHandler) {
-            logger.debug("Found event handler {}.", bean.getBeanClass().getSimpleName());
-            eventHandlers.add(bean);
-        } else if (isQueryHandler) {
-            logger.debug("Found query handler {}.", bean.getBeanClass().getSimpleName());
-            queryHandlers.add(bean);
-        }
+        MessageHandlingBean.inspect(processBean.getBean()) // TODO: 8/31/2018 add logging what handlers are found
+                           .ifPresent(messageHandlers::add);
     }
 
     /**
@@ -592,29 +573,7 @@ public class AxonCdiExtension implements Extension {
             configurerModule.configureModule(configurer);
         });
 
-        // Register projections.
-        for (Bean<?> projection : projections) {
-            logger.info("Registering projection {}.", projection.getBeanClass().getName());
-            Object projectionInstance = projection.create(beanManager.createCreationalContext(null));
-            eventHandlingConfiguration.registerEventHandler(c -> projectionInstance);
-            configurer.registerQueryHandler(c -> projectionInstance);
-        }
-
-        // Register event handlers.
-        for (Bean<?> eventHandler : eventHandlers) {
-            logger.info("Registering event handler {}.", eventHandler.getBeanClass().getName());
-
-            eventHandlingConfiguration.registerEventHandler(
-                    c -> eventHandler.create(beanManager.createCreationalContext(null)));
-        }
-
-        // Register query handlers.
-        for (Bean<?> queryHandler : queryHandlers) {
-            logger.info("Registering query handler {}.", queryHandler.getBeanClass().getName());
-
-            configurer.registerQueryHandler(c -> queryHandler.create(
-                    beanManager.createCreationalContext(null)));
-        }
+        registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
 
         // Event bus registration.
         if (this.eventBusProducer != null) {
@@ -748,6 +707,26 @@ public class AxonCdiExtension implements Extension {
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
         configuration.shutdown();
+    }
+
+    private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
+                                         EventHandlingConfiguration eventHandlingConfiguration) {
+        for (MessageHandlingBean messageHandler : messageHandlers) {
+            // TODO: 8/31/2018 should we always create instances? or should we check whether it already exists?
+            Object instance = messageHandler.getBean().create(beanManager.createCreationalContext(null));
+            if (messageHandler.isEventHandler()) {
+                logger.info("Registering event handler {}.", instance.getClass().getSimpleName());
+                eventHandlingConfiguration.registerEventHandler(c -> instance);
+            }
+            if (messageHandler.isCommandHandler()) {
+                logger.info("Registering command handler {}.", instance.getClass().getSimpleName());
+                configurer.registerCommandHandler(c -> instance);
+            }
+            if (messageHandler.isQueryHandler()) {
+                logger.info("Registering query handler {}.", instance.getClass().getSimpleName());
+                configurer.registerQueryHandler(c -> instance);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
