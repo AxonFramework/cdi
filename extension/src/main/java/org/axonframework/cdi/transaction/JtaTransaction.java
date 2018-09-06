@@ -1,7 +1,6 @@
 package org.axonframework.cdi.transaction;
 
 import java.lang.invoke.MethodHandles;
-import java.util.logging.Level;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.transaction.HeuristicMixedException;
