@@ -3,6 +3,7 @@ package org.axonframework.cdi.example.javase.configuration;
 import java.io.Serializable;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 

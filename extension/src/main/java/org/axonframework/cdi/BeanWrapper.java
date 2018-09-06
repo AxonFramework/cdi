@@ -19,10 +19,16 @@ import java.util.function.Supplier;
 // Java EE 7?
 public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
+    private final String name;
     private final Class<T> clazz;
     private final Supplier<T> supplier;
 
     public BeanWrapper(final Class<T> clazz, final Supplier<T> supplier) {
+        this(clazz.getSimpleName(), clazz, supplier);
+    }
+
+    public BeanWrapper(final String name, final Class<T> clazz, final Supplier<T> supplier) {
+        this.name = name;
         this.clazz = clazz;
         this.supplier = supplier;
     }
@@ -41,7 +47,7 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
     @Override
     public String getName() {
-        return clazz.getSimpleName();
+        return name;
     }
 
     @SuppressWarnings("serial")
