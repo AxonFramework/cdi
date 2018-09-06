@@ -39,6 +39,8 @@ You can provide configuration overrides for the following Axon artifacts by crea
 * [EventBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/EventBus.html)
 * [CommandBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/CommandBus.html)
 * [QueryBus](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryBus.html)
+* [CommandGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/commandhandling/gateway/CommandGateway.html)
+* [QueryGateway](http://www.axonframework.org/apidocs/3.3/org/axonframework/queryhandling/QueryGateway.html)
 * [TokenStore](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/tokenstore/TokenStore.html)
 * [Serializer](http://www.axonframework.org/apidocs/3.3/org/axonframework/serialization/Serializer.html) (both a global serializer and an event serializer may be overriden. To override an event serializer, please name the producer "eventSerializer" via the @Named annotation. It is purely optional, but you can use @Named to name your global serializer "serializer". If no @Named annotation is present, the serializer is assumed to be global)
 * [ErrorHandler](http://www.axonframework.org/apidocs/3.3/org/axonframework/eventhandling/ErrorHandler.html)
