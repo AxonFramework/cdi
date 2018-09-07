@@ -1,4 +1,4 @@
-package org.axonframework.cdi.saga;
+package org.axonframework.cdi.eventhandling.saga;
 
 import org.axonframework.eventhandling.saga.ResourceInjector;
 

@@ -10,27 +10,29 @@ import javax.enterprise.inject.spi.Bean;
 /**
  * @author Milan Savic
  */
-class MessageHandlingBean {
+class MessageHandlingBeanDefinition {
 
     private final Bean<?> bean;
     private final boolean eventHandler;
     private final boolean queryHandler;
     private final boolean commandHandler;
 
-    MessageHandlingBean(Bean<?> bean, boolean eventHandler, boolean queryHandler, boolean commandHandler) {
+    MessageHandlingBeanDefinition(Bean<?> bean, boolean eventHandler,
+            boolean queryHandler, boolean commandHandler) {
         this.bean = bean;
         this.eventHandler = eventHandler;
         this.queryHandler = queryHandler;
         this.commandHandler = commandHandler;
     }
 
-    static Optional<MessageHandlingBean> inspect(Bean<?> bean) {
+    static Optional<MessageHandlingBeanDefinition> inspect(Bean<?> bean) {
         boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
         boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
         boolean isCommandHandler = CdiUtilities.hasAnnotatedMethod(bean, CommandHandler.class);
 
         if (isEventHandler || isQueryHandler || isCommandHandler) {
-            return Optional.of(new MessageHandlingBean(bean, isEventHandler, isQueryHandler, isCommandHandler));
+            return Optional.of(new MessageHandlingBeanDefinition(bean,
+                    isEventHandler, isQueryHandler, isCommandHandler));
         }
 
         return Optional.empty();
@@ -50,5 +52,12 @@ class MessageHandlingBean {
 
     public boolean isCommandHandler() {
         return commandHandler;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageHandlingBeanDefinition with bean=" + bean
+                + ", eventHandler=" + eventHandler + ", queryHandler="
+                + queryHandler + ", commandHandler=" + commandHandler;
     }
 }

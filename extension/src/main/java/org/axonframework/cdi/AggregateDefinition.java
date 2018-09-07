@@ -22,23 +22,26 @@ class AggregateDefinition {
     }
 
     Optional<String> repository() {
-        return createOptional(getAggregateAnnotation().repository());
+        return StringUtilities.createOptional(getAggregateAnnotation().repository());
     }
 
     String repositoryName() {
-        return repository().orElse(lcFirst(aggregateType().getSimpleName()) + "Repository");
+        return repository().orElse(StringUtilities.lowerCaseFirstLetter(
+                aggregateType().getSimpleName()) + "Repository");
     }
 
     Optional<String> snapshotTriggerDefinition() {
-        return createOptional(getAggregateAnnotation().snapshotTriggerDefinition());
+        return StringUtilities.createOptional(getAggregateAnnotation()
+                .snapshotTriggerDefinition());
     }
 
     Optional<String> type() {
-        return createOptional(getAggregateAnnotation().type());
+        return StringUtilities.createOptional(getAggregateAnnotation().type());
     }
 
     Optional<String> commandTargetResolver() {
-        return createOptional(getAggregateAnnotation().commandTargetResolver());
+        return StringUtilities.createOptional(getAggregateAnnotation()
+                .commandTargetResolver());
     }
 
     private Aggregate getAggregateAnnotation() {
@@ -47,21 +50,8 @@ class AggregateDefinition {
 
     boolean isJpaAggregate() {
         return Arrays.stream(aggregateType.getAnnotations())
-                     .map(Annotation::annotationType)
-                     .map(Class::getName)
-                     .anyMatch("javax.persistence.Entity"::equals);
-    }
-
-    // TODO: 8/29/2018 extract to some util and replace in SagaDefinition too
-    private String lcFirst(String string) {
-        return string.substring(0, 1).toLowerCase() + string.substring(1);
-    }
-
-    // TODO: 8/29/2018 extract to some util and replace in SagaDefinition too
-    private Optional<String> createOptional(String value) {
-        if ("".equals(value)) {
-            return Optional.empty();
-        }
-        return Optional.of(value);
+                .map(Annotation::annotationType)
+                .map(Class::getName)
+                .anyMatch("javax.persistence.Entity"::equals);
     }
 }

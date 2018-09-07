@@ -7,28 +7,13 @@ import java.lang.reflect.Type;
 import static java.util.Arrays.stream;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
+import javax.inject.Named;
 
 public class CdiUtilities {
-
-    /**
-     * Returns a transitive stream of all methods of a class, for the purpose of scanning for methods with a
-     * given annotation. As we know Object will not have Axon annotations, either that or null is a reason to stop
-     * travelling upwards in the hierarchy.
-     *
-     * Added this because Class<>.getMethods() only returns a transitive list of public methods.
-     *
-     * @param clazz The starting point in the hierarchy.
-     * @return An empty stream for null or java.lang.Object, otherwise a stream of all methods
-     *          (public/protected/package private/private) followed by those of its super, etc.
-     */
-    private static Stream<Method> getDeclaredMethodsTransitive(Class<?> clazz) {
-        return ((clazz == null) || clazz.equals(java.lang.Object.class))
-               ? Stream.empty()
-               : Stream.concat(stream(clazz.getDeclaredMethods()), getDeclaredMethodsTransitive(clazz.getSuperclass()));
-    }
 
     /**
      * Returns an object reference of a given bean.
@@ -84,5 +69,40 @@ public class CdiUtilities {
      */
     public static BeanManager getBeanManager() {
         return CDI.current().getBeanManager();
+    }
+
+    static String extractBeanName(AnnotatedMember<?> annotatedMember) {
+        Named named = annotatedMember.getAnnotation(Named.class);
+
+        if (named != null && !"".equals(named.value())) {
+            return named.value();
+        }
+
+        // TODO: Should not try to derive the name of a member that does not 
+        // have the @Named annotation on it.
+        return annotatedMember.getJavaMember().getName();
+    }
+
+    /**
+     * Returns a transitive stream of all methods of a class, for the purpose of
+     * scanning for methods with a given annotation. As we know Object will not
+     * have Axon annotations, either that or null is a reason to stop traveling
+     * upwards in the hierarchy.
+     *
+     * Added this because Class<>.getMethods() only returns a transitive list of
+     * public methods.
+     *
+     * @param clazz The starting point in the hierarchy.
+     * @return An empty stream for null or java.lang.Object, otherwise a stream
+     * of all methods (public/protected/package private/private) followed by
+     * those of its super, etc.
+     */
+    // TODO: See if this is really necessary, manifestation of a bug elsewhere
+    // or is a quirk of CDI. Does have a performance cost.
+    private static Stream<Method> getDeclaredMethodsTransitive(Class<?> clazz) {
+        return ((clazz == null) || clazz.equals(java.lang.Object.class))
+                ? Stream.empty()
+                : Stream.concat(stream(clazz.getDeclaredMethods()),
+                        getDeclaredMethodsTransitive(clazz.getSuperclass()));
     }
 }
