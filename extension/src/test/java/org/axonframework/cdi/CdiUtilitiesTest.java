@@ -76,6 +76,24 @@ public class CdiUtilitiesTest {
     }
 
     @Test
+    public void hasAnnotatedMethodInParent_true() {
+        assertTrue(CdiUtilities.hasAnnotatedMethod(new InheritAnnotatedMethod(),
+                FirstMethodAnnotation.class));
+    }
+
+    @Test
+    public void hasAnnotatedPrivateMethod_true() {
+        assertTrue(CdiUtilities.hasAnnotatedMethod(new HasPrivateMethodAnnotation(),
+                FirstMethodAnnotation.class));
+    }
+
+    @Test
+    public void hasAnnotatedPrivateMethodInParent_true() {
+        assertTrue(CdiUtilities.hasAnnotatedMethod(new InheritAnnotatedPrivateMethod(),
+                FirstMethodAnnotation.class));
+    }
+
+    @Test
     public void hasAnnotatedMethod_false() {
         assertFalse(CdiUtilities.hasAnnotatedMethod(new HasMethodAnnotation(),
                 SecondMethodAnnotation.class));
@@ -123,6 +141,30 @@ public class CdiUtilitiesTest {
 
         @FirstMethodAnnotation
         public void foo() {
+
+        }
+    }
+
+    public static class InheritAnnotatedMethod extends HasMethodAnnotation {
+        public void bar() {
+
+        }
+    }
+
+    public static class HasPrivateMethodAnnotation extends BeanWrapper<HasMethodAnnotation> {
+
+        public HasPrivateMethodAnnotation() {
+            super(HasMethodAnnotation.class, HasMethodAnnotation::new);
+        }
+
+        @FirstMethodAnnotation
+        private void foo() {
+
+        }
+    }
+
+    public static class InheritAnnotatedPrivateMethod extends HasPrivateMethodAnnotation {
+        public void bar() {
 
         }
     }
