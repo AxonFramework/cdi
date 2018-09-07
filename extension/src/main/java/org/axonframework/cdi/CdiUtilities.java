@@ -2,14 +2,33 @@ package org.axonframework.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import static java.util.Arrays.stream;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 
 public class CdiUtilities {
+
+    /**
+     * Returns a transitive stream of all methods of a class, for the purpose of scanning for methods with a
+     * given annotation. As we know Object will not have Axon annotations, either that or null is a reason to stop
+     * travelling upwards in the hierarchy.
+     *
+     * Added this because Class<>.getMethods() only returns a transitive list of public methods.
+     *
+     * @param clazz The starting point in the hierarchy.
+     * @return An empty stream for null or java.lang.Object, otherwise a stream of all methods
+     *          (public/protected/package private/private) followed by those of its super, etc.
+     */
+    private static Stream<Method> getDeclaredMethodsTransitive(Class<?> clazz) {
+        return ((clazz == null) || clazz.equals(java.lang.Object.class))
+               ? Stream.empty()
+               : Stream.concat(stream(clazz.getDeclaredMethods()), getDeclaredMethodsTransitive(clazz.getSuperclass()));
+    }
 
     /**
      * Returns an object reference of a given bean.
@@ -36,7 +55,7 @@ public class CdiUtilities {
      */
     public static final boolean hasAnnotatedMethod(final Bean<?> bean,
             final Class<? extends Annotation> clazz) {
-        return stream(bean.getBeanClass().getMethods()).anyMatch(
+        return getDeclaredMethodsTransitive(bean.getBeanClass()).anyMatch(
                 m -> m.isAnnotationPresent(clazz));
     }
 
