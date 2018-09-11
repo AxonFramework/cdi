@@ -5,7 +5,7 @@ This [Axon Framework](https://axoniq.io) module provides support for the [CDI](h
 The current minimum supported versions are:
 
 * Axon Framework 3.3.5
-* CDI 1.1/Java EE 7
+* CDI 1.2/Java EE 7
 * Java SE 8
  
 We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE. We will test the module with Thorntail (formerly WildFly Swarm) and WebSphere Liberty/Open Liberty. Contributions testing against WebSphere classic and WebLogic are welcome.

@@ -109,6 +109,10 @@ public class AxonCdiExtension implements Extension {
     // timing issues. Right now things are processed as they make
     // "semantic" sense. Do you think this could be improved to do the same
     // processing later?
+
+    // Application beans are not eagerly instantiated by default.
+    // The operations you are doing in this extension trigger eager instantiation.
+    // I think we can find something less verbose and allowing late instantiation
     /**
      * Scans all annotated types with the {@link Aggregate} annotation and
      * collects them for registration.
@@ -166,6 +170,10 @@ public class AxonCdiExtension implements Extension {
     // later or should I do it right now during annotation scanning? Is there a
     // specific type of exception that's better to throw or will any runtime
     // exception do?
+
+    // to stick to CDI spirit you should fail ASAP. The best way to do that is by using
+    // addDefinitionError() that is available in all lifecycle event (i.e. processProducer.addDefinitionError())
+
     /**
      * Scans for an event storage engine producer.
      *
@@ -849,6 +857,8 @@ public class AxonCdiExtension implements Extension {
         // Antoine: Is createCreationalContext(null) is correct here?
         // If not, what should I do instead? Again, many of these things
         // may be indirectly referencing container resources.
+
+        // Yes it's correct, but I don't think you need to produce your instances by hand
         return producer.produce(beanManager.createCreationalContext(null));
     }
 }
