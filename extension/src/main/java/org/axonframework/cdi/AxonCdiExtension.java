@@ -109,7 +109,6 @@ public class AxonCdiExtension implements Extension {
     // timing issues. Right now things are processed as they make
     // "semantic" sense. Do you think this could be improved to do the same
     // processing later?
-
     // Application beans are not eagerly instantiated by default.
     // The operations you are doing in this extension trigger eager instantiation.
     // I think we can find something less verbose and allowing late instantiation
@@ -170,10 +169,8 @@ public class AxonCdiExtension implements Extension {
     // later or should I do it right now during annotation scanning? Is there a
     // specific type of exception that's better to throw or will any runtime
     // exception do?
-
     // to stick to CDI spirit you should fail ASAP. The best way to do that is by using
     // addDefinitionError() that is available in all lifecycle event (i.e. processProducer.addDefinitionError())
-
     /**
      * Scans for an event storage engine producer.
      *
@@ -484,15 +481,21 @@ public class AxonCdiExtension implements Extension {
 
         if (this.configurerProducer != null) {
             configurer = produce(beanManager, configurerProducer);
+            logger.info("Starting with an application provided configurer: {}.",
+                    configurer.getClass().getSimpleName());
         } else {
+            logger.info("Starting with the Axon default configuration.");
+
             configurer = DefaultConfigurer.defaultConfiguration();
         }
 
         // Entity manager provider registration.
         if (this.entityManagerProviderProducer != null) {
-            final EntityManagerProvider entityManagerProvider = produce(beanManager, entityManagerProviderProducer);
+            final EntityManagerProvider entityManagerProvider
+                    = produce(beanManager, entityManagerProviderProducer);
 
-            logger.info("Registering entity manager provider {}.", entityManagerProvider.getClass().getSimpleName());
+            logger.info("Registering entity manager provider: {}.",
+                    entityManagerProvider.getClass().getSimpleName());
 
             configurer.registerComponent(EntityManagerProvider.class, c -> entityManagerProvider);
         }
@@ -501,7 +504,7 @@ public class AxonCdiExtension implements Extension {
         if (this.serializerProducer != null) {
             final Serializer serializer = produce(beanManager, serializerProducer);
 
-            logger.info("Registering serializer {}.", serializer.getClass().getSimpleName());
+            logger.info("Registering serializer: {}.", serializer.getClass().getSimpleName());
 
             configurer.configureSerializer(c -> serializer);
         }
@@ -510,7 +513,7 @@ public class AxonCdiExtension implements Extension {
         if (this.eventSerializerProducer != null) {
             final Serializer serializer = produce(beanManager, eventSerializerProducer);
 
-            logger.info("Registering event serializer {}.", serializer.getClass().getSimpleName());
+            logger.info("Registering event serializer: {}.", serializer.getClass().getSimpleName());
 
             configurer.configureEventSerializer(c -> serializer);
         }
@@ -519,16 +522,17 @@ public class AxonCdiExtension implements Extension {
         if (this.messageSerializerProducer != null) {
             final Serializer serializer = produce(beanManager, messageSerializerProducer);
 
-            logger.info("Registering message serializer {}.", serializer.getClass().getSimpleName());
+            logger.info("Registering message serializer: {}.", serializer.getClass().getSimpleName());
 
             configurer.configureMessageSerializer(c -> serializer);
         }
 
         // Transaction manager registration.
         if (this.transactionManagerProducer != null) {
-            final TransactionManager transactionManager = produce(beanManager, transactionManagerProducer);
+            final TransactionManager transactionManager
+                    = produce(beanManager, transactionManagerProducer);
 
-            logger.info("Registering transaction manager {}.", transactionManager.getClass().getSimpleName());
+            logger.info("Registering transaction manager: {}.", transactionManager.getClass().getSimpleName());
 
             configurer.configureTransactionManager(c -> transactionManager);
         }
@@ -537,11 +541,9 @@ public class AxonCdiExtension implements Extension {
         if (this.commandBusProducer != null) {
             final CommandBus commandBus = produce(beanManager, commandBusProducer);
 
-            logger.info("Registering command bus {}.", commandBus.getClass().getSimpleName());
+            logger.info("Registering command bus: {}.", commandBus.getClass().getSimpleName());
 
             configurer.configureCommandBus(c -> commandBus);
-        } else {
-            logger.info("No command bus producer found, using default simple command bus.");
         }
 
         // Module configurations registration.
@@ -551,13 +553,26 @@ public class AxonCdiExtension implements Extension {
         // public ModuleConfiguration eventHandlingConfiguration() {
         //     return new EventHandlingConfiguration();
         // }
-        // It will be registered as module configuration only and not as EventHandlingConfiguration! This will result
-        // in having double EventHandlingConfiguration within Configuration. The same applies to EventProcessingConfiguration.
+        // It will be registered as module configuration only and not as EventHandlingConfiguration!
+        // This will result in having double EventHandlingConfiguration within Configuration.
+        // The same applies to EventProcessingConfiguration.
+        // Milan: I need to understand this a bit more from you, but I think the solution
+        // is to simply mandate the presence of @Named for EventHandlingConfiguration
+        // and EventProcessingConfiguration that is produced as type ModuleConfiguration
+        // but is not really a module configuration.
         for (Producer<ModuleConfiguration> producer : moduleConfigurationProducers) {
+            // Milan: This looks very interesting. I would like to understand why
+            // we are doing this and whether we should do this more globally,
+            // perhaps moving the entire Axon configuration to AfterDeploymentValidation
+            // instead of AfterBeanDiscovery.
+            // Antoine: Do you have any thoughts on this? Could this approach
+            // help solve any potential initialization issues? What's the easiest
+            // way to do this if so?
             configurer.registerModule(new LazyRetrievedModuleConfiguration(() -> {
                 ModuleConfiguration moduleConfiguration
                         = producer.produce(beanManager.createCreationalContext(null));
-                logger.info("Registering module configuration {}.", moduleConfiguration.getClass().getSimpleName());
+                logger.info("Registering module configuration: {}.",
+                        moduleConfiguration.getClass().getSimpleName());
                 return moduleConfiguration;
             }));
         }
@@ -852,7 +867,8 @@ public class AxonCdiExtension implements Extension {
         }
     }
 
-    // TODO: 8/29/2018 should we store produced components in some kind of cache and extract them if present?
+    // TODO: 8/29/2018 should we store produced components in some kind of cache
+    // and extract them if present?
     private <T> T produce(BeanManager beanManager, Producer<T> producer) {
         // Antoine: Is createCreationalContext(null) is correct here?
         // If not, what should I do instead? Again, many of these things
