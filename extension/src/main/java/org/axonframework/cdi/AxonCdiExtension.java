@@ -122,14 +122,14 @@ public class AxonCdiExtension implements Extension {
             final ProcessAnnotatedType<T> processAnnotatedType) {
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
-        logger.debug("Found Aggregate: {}.", clazz);
+        logger.debug("Found aggregate: {}.", clazz);
 
         aggregates.add(new AggregateDefinition(clazz));
     }
 
     <T> void processAggregateRepositoryProducer(
             @Observes final ProcessProducer<T, Repository> processProducer) {
-        logger.debug("Found Producer for Repository: {}.", processProducer.getProducer());
+        logger.debug("Found producer for repository: {}.", processProducer.getProducer());
 
         String repositoryName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
 
@@ -138,7 +138,8 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processSnapshotTriggerDefinitionProducer(
             @Observes final ProcessProducer<T, SnapshotTriggerDefinition> processProducer) {
-        logger.debug("Found Producer for SnapshotTriggerDefinition: {}.", processProducer.getProducer());
+        logger.debug("Found producer for snapshot trigger definition: {}.",
+                processProducer.getProducer());
 
         String triggerDefinitionName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
 
@@ -147,7 +148,7 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processCommandTargetResolverProducer(
             @Observes final ProcessProducer<T, CommandTargetResolver> processProducer) {
-        logger.debug("Found Producer for CommandTargetResolver: {}.", processProducer.getProducer());
+        logger.debug("Found producer for command target resolver: {}.", processProducer.getProducer());
 
         String resolverName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
 
@@ -158,7 +159,7 @@ public class AxonCdiExtension implements Extension {
             final ProcessAnnotatedType<T> processAnnotatedType) {
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
-        logger.debug("Found Saga: {}.", clazz);
+        logger.debug("Found saga: {}.", clazz);
 
         sagas.add(new SagaDefinition(clazz));
     }
@@ -180,7 +181,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, EventStorageEngine> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for EventStorageEngine found: {}.",
+        logger.debug("Producer for event storage engine found: {}.",
                 processProducer.getProducer());
 
         this.eventStorageEngineProducer = processProducer.getProducer();
@@ -188,7 +189,7 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processSagaConfigurationProducer(
             @Observes final ProcessProducer<T, SagaConfiguration<?>> processProducer) {
-        logger.debug("Producer for SagaConfiguration found: {}.",
+        logger.debug("Producer for saga configuration found: {}.",
                 processProducer.getProducer());
 
         String sagaConfigurationName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
@@ -205,7 +206,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, Configurer> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for Configurer found: {}.", processProducer.getProducer());
+        logger.debug("Producer for configurer found: {}.", processProducer.getProducer());
 
         this.configurerProducer = processProducer.getProducer();
     }
@@ -219,7 +220,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, TransactionManager> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for TransactionManager found: {}.",
+        logger.debug("Producer for transaction manager found: {}.",
                 processProducer.getProducer());
 
         this.transactionManagerProducer = processProducer.getProducer();
@@ -244,17 +245,17 @@ public class AxonCdiExtension implements Extension {
                     : namedValue;
             switch (serializerName) {
                 case "eventSerializer":
-                    logger.debug("Producer for EventSerializer found: {}.",
+                    logger.debug("Producer for event serializer found: {}.",
                             processProducer.getProducer());
                     eventSerializerProducer = processProducer.getProducer();
                     break;
                 case "messageSerializer":
-                    logger.debug("Producer for MessageSerializer found: {}.",
+                    logger.debug("Producer for message serializer found: {}.",
                             processProducer.getProducer());
                     messageSerializerProducer = processProducer.getProducer();
                     break;
                 case "serializer":
-                    logger.debug("Producer for Serializer found: {}.",
+                    logger.debug("Producer for serializer found: {}.",
                             processProducer.getProducer());
                     this.serializerProducer = processProducer.getProducer();
                     break;
@@ -262,7 +263,7 @@ public class AxonCdiExtension implements Extension {
                     logger.warn("Unknown named serializer configured: " + serializerName);
             }
         } else {
-            logger.debug("Producer for Serializer found: {}.", processProducer.getProducer());
+            logger.debug("Producer for serializer found: {}.", processProducer.getProducer());
             this.serializerProducer = processProducer.getProducer();
         }
     }
@@ -276,7 +277,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, EventBus> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for EventBus found: {}.", processProducer.getProducer());
+        logger.debug("Producer for event bus found: {}.", processProducer.getProducer());
 
         this.eventBusProducer = processProducer.getProducer();
     }
@@ -290,7 +291,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, CommandBus> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for CommandBus found: {}.",
+        logger.debug("Producer for command bus found: {}.",
                 processProducer.getProducer());
 
         this.commandBusProducer = processProducer.getProducer();
@@ -300,7 +301,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, CommandGateway> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for CommandGateway found: {}.",
+        logger.debug("Producer for command gateway found: {}.",
                 processProducer.getProducer());
 
         this.commandGatewayProducer = processProducer.getProducer();
@@ -317,7 +318,7 @@ public class AxonCdiExtension implements Extension {
         // from the environment. There likely isn't.
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for EntityManagerProvider found: {}.",
+        logger.debug("Producer for entity manager provider found: {}.",
                 processProducer.getProducer());
 
         this.entityManagerProviderProducer = processProducer.getProducer();
@@ -332,7 +333,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, TokenStore> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for TokenStore found: {}.", processProducer.getProducer());
+        logger.debug("Producer for token store found: {}.", processProducer.getProducer());
 
         this.tokenStoreProducer = processProducer.getProducer();
     }
@@ -341,7 +342,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, ErrorHandler> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for ErrorHandler found: {}.", processProducer.getProducer());
+        logger.debug("Producer for error handler found: {}.", processProducer.getProducer());
 
         this.errorHandlerProducer = processProducer.getProducer();
     }
@@ -350,7 +351,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, ListenerInvocationErrorHandler> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for ListenerInvocationErrorHandler found: {}.",
+        logger.debug("Producer for listener invocation error handler found: {}.",
                 processProducer.getProducer());
 
         this.listenerInvocationErrorHandlerProducer = processProducer.getProducer();
@@ -358,7 +359,7 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processCorrelationDataProviderProducer(
             @Observes final ProcessProducer<T, CorrelationDataProvider> processProducer) {
-        logger.debug("Producer for CorrelationDataProvider found: {}.",
+        logger.debug("Producer for correlation data provider found: {}.",
                 processProducer.getProducer());
 
         this.correlationDataProviderProducers.add(processProducer.getProducer());
@@ -368,7 +369,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, QueryBus> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for QueryBus found: {}.",
+        logger.debug("Producer for query bus found: {}.",
                 processProducer.getProducer());
 
         this.queryBusProducer = processProducer.getProducer();
@@ -378,7 +379,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, QueryGateway> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for QueryGateway found: {}.",
+        logger.debug("Producer for query gateway found: {}.",
                 processProducer.getProducer());
 
         this.queryGatewayProducer = processProducer.getProducer();
@@ -388,7 +389,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, QueryUpdateEmitter> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for QueryUpdateEmitter found: {}.", processProducer.getProducer());
+        logger.debug("Producer for query update emitter found: {}.", processProducer.getProducer());
 
         this.queryUpdateEmitterProducer = processProducer.getProducer();
     }
@@ -397,14 +398,14 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, DeadlineManager> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for DeadlineManager found: {}.", processProducer.getProducer());
+        logger.debug("Producer for deadline manager found: {}.", processProducer.getProducer());
 
         this.deadlineManagerProducer = processProducer.getProducer();
     }
 
     <T> void processModuleConfigurationProducer(
             @Observes final ProcessProducer<T, ModuleConfiguration> processProducer) {
-        logger.debug("Producer for ModuleConfiguration found: {}.",
+        logger.debug("Producer for module configuration found: {}.",
                 processProducer.getProducer());
 
         this.moduleConfigurationProducers.add(processProducer.getProducer());
@@ -414,7 +415,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, EventHandlingConfiguration> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for EventHandlingConfiguration found: {}.",
+        logger.debug("Producer for event handling configuration found: {}.",
                 processProducer.getProducer());
 
         this.eventHandlingConfigurationProducer = processProducer.getProducer();
@@ -424,7 +425,7 @@ public class AxonCdiExtension implements Extension {
             @Observes final ProcessProducer<T, EventProcessingConfiguration> processProducer) {
         // TODO Handle multiple producer definitions.
 
-        logger.debug("Producer for EventProcessingConfiguration found: {}.",
+        logger.debug("Producer for event processing configuration found: {}.",
                 processProducer.getProducer());
 
         this.eventProcessingConfigurationProducer = processProducer.getProducer();
@@ -432,14 +433,14 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processConfigurerModuleProducer(
             @Observes final ProcessProducer<T, ConfigurerModule> processProducer) {
-        logger.debug("Producer for ConfigurerModule found: {}.", processProducer.getProducer());
+        logger.debug("Producer for configurer module found: {}.", processProducer.getProducer());
 
         this.configurerModuleProducers.add(processProducer.getProducer());
     }
 
     <T> void processSagaStoreProducer(
             @Observes final ProcessProducer<T, SagaStore> processProducer) {
-        logger.debug("Producer for SagaStore found: {}.", processProducer.getProducer());
+        logger.debug("Producer for saga store found: {}.", processProducer.getProducer());
 
         String sagaStoreName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
 
@@ -448,7 +449,7 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processEventUpcasterProducer(
             @Observes final ProcessProducer<T, EventUpcaster> processProducer) {
-        logger.debug("Producer for EventUpcaster found: {}.", processProducer.getProducer());
+        logger.debug("Producer for event upcaster found: {}.", processProducer.getProducer());
 
         this.eventUpcasterProducers.add(processProducer.getProducer());
     }
@@ -579,12 +580,14 @@ public class AxonCdiExtension implements Extension {
 
         // Event handling configuration registration.
         EventHandlingConfiguration eventHandlingConfiguration;
+
         if (eventHandlingConfigurationProducer != null) {
             eventHandlingConfiguration = produce(beanManager, eventHandlingConfigurationProducer);
         } else {
             eventHandlingConfiguration = new EventHandlingConfiguration();
         }
-        logger.info("Registering event handling configuration {}.",
+
+        logger.info("Registering event handling configuration: {}.",
                 eventHandlingConfiguration.getClass().getSimpleName());
         configurer.registerModule(eventHandlingConfiguration);
 
@@ -593,7 +596,7 @@ public class AxonCdiExtension implements Extension {
             EventProcessingConfiguration eventProcessingConfiguration
                     = produce(beanManager, eventProcessingConfigurationProducer);
 
-            logger.info("Registering event processing configuration {}.",
+            logger.info("Registering event processing configuration: {}.",
                     eventProcessingConfiguration.getClass().getSimpleName());
 
             configurer.registerModule(eventProcessingConfiguration);
@@ -602,7 +605,9 @@ public class AxonCdiExtension implements Extension {
         // Configurer modules registration
         configurerModuleProducers.forEach(producer -> {
             ConfigurerModule configurerModule = produce(beanManager, producer);
-            logger.info("Configuring module {}.", configurerModule.getClass().getSimpleName());
+
+            logger.info("Configuring module: {}.", configurerModule.getClass().getSimpleName());
+
             configurerModule.configureModule(configurer);
         });
 
@@ -612,7 +617,7 @@ public class AxonCdiExtension implements Extension {
         if (this.eventBusProducer != null) {
             final EventBus eventBus = produce(beanManager, eventBusProducer);
 
-            logger.info("Registering event bus {}.", eventBus.getClass().getSimpleName());
+            logger.info("Registering event bus: {}.", eventBus.getClass().getSimpleName());
 
             configurer.configureEventBus(c -> eventBus);
         }
@@ -621,7 +626,7 @@ public class AxonCdiExtension implements Extension {
         if (this.tokenStoreProducer != null) {
             final TokenStore tokenStore = produce(beanManager, tokenStoreProducer);
 
-            logger.info("Registering token store {}.", tokenStore.getClass().getSimpleName());
+            logger.info("Registering token store: {}.", tokenStore.getClass().getSimpleName());
 
             configurer.registerComponent(TokenStore.class, c -> tokenStore);
         }
@@ -631,10 +636,11 @@ public class AxonCdiExtension implements Extension {
             ListenerInvocationErrorHandler listenerInvocationErrorHandler
                     = produce(beanManager, listenerInvocationErrorHandlerProducer);
 
-            logger.info("Registering listener invocation error handler {}.",
+            logger.info("Registering listener invocation error handler: {}.",
                     listenerInvocationErrorHandler.getClass().getSimpleName());
 
-            configurer.registerComponent(ListenerInvocationErrorHandler.class, c -> listenerInvocationErrorHandler);
+            configurer.registerComponent(ListenerInvocationErrorHandler.class,
+                    c -> listenerInvocationErrorHandler);
         }
 
         // Error handler registration.
