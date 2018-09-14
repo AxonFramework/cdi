@@ -647,7 +647,7 @@ public class AxonCdiExtension implements Extension {
         if (this.errorHandlerProducer != null) {
             ErrorHandler errorHandler = produce(beanManager, errorHandlerProducer);
 
-            logger.info("Registering error handler {}.", errorHandler.getClass().getSimpleName());
+            logger.info("Registering error handler: {}.", errorHandler.getClass().getSimpleName());
 
             configurer.registerComponent(ErrorHandler.class, c -> errorHandler);
         }
@@ -657,8 +657,10 @@ public class AxonCdiExtension implements Extension {
                 .stream()
                 .map(producer -> {
                     CorrelationDataProvider correlationDataProvider = produce(beanManager, producer);
-                    logger.info("Registering correlation data provider {}.",
+
+                    logger.info("Registering correlation data provider: {}.",
                             correlationDataProvider.getClass().getSimpleName());
+
                     return correlationDataProvider;
                 })
                 .collect(Collectors.toList());
@@ -668,7 +670,8 @@ public class AxonCdiExtension implements Extension {
         this.eventUpcasterProducers
                 .forEach(producer -> {
                     EventUpcaster eventUpcaster = produce(beanManager, producer);
-                    logger.info("Registering event upcaster {}.", eventUpcaster.getClass().getSimpleName());
+                    logger.info("Registering event upcaster: {}.",
+                            eventUpcaster.getClass().getSimpleName());
                     configurer.registerEventUpcaster(c -> eventUpcaster);
                 });
 
@@ -676,7 +679,7 @@ public class AxonCdiExtension implements Extension {
         if (this.queryBusProducer != null) {
             QueryBus queryBus = produce(beanManager, queryBusProducer);
 
-            logger.info("Registering query bus {}.", queryBus.getClass().getSimpleName());
+            logger.info("Registering query bus: {}.", queryBus.getClass().getSimpleName());
 
             configurer.configureQueryBus(c -> queryBus);
         }
@@ -685,7 +688,7 @@ public class AxonCdiExtension implements Extension {
         if (this.queryGatewayProducer != null) {
             QueryGateway queryGateway = produce(beanManager, queryGatewayProducer);
 
-            logger.info("Registering query gateway {}.", queryGateway.getClass().getSimpleName());
+            logger.info("Registering query gateway: {}.", queryGateway.getClass().getSimpleName());
 
             configurer.registerComponent(QueryGateway.class, c -> queryGateway);
         }
@@ -694,7 +697,7 @@ public class AxonCdiExtension implements Extension {
         if (this.queryUpdateEmitterProducer != null) {
             QueryUpdateEmitter queryUpdateEmitter = produce(beanManager, queryUpdateEmitterProducer);
 
-            logger.info("Registering query update emitter {}.", queryUpdateEmitter.getClass().getSimpleName());
+            logger.info("Registering query update emitter: {}.", queryUpdateEmitter.getClass().getSimpleName());
 
             configurer.configureQueryUpdateEmitter(c -> queryUpdateEmitter);
         }
@@ -703,7 +706,7 @@ public class AxonCdiExtension implements Extension {
         if (this.deadlineManagerProducer != null) {
             DeadlineManager deadlineManager = produce(beanManager, deadlineManagerProducer);
 
-            logger.info("Registering deadline manager {}.", deadlineManager.getClass().getSimpleName());
+            logger.info("Registering deadline manager: {}.", deadlineManager.getClass().getSimpleName());
 
             configurer.registerComponent(DeadlineManager.class, c -> deadlineManager);
         }
@@ -712,7 +715,7 @@ public class AxonCdiExtension implements Extension {
         if (this.eventStorageEngineProducer != null) {
             final EventStorageEngine eventStorageEngine = produce(beanManager, eventStorageEngineProducer);
 
-            logger.info("Registering event storage {}.", eventStorageEngine.getClass().getSimpleName());
+            logger.info("Registering event storage: {}.", eventStorageEngine.getClass().getSimpleName());
 
             configurer.configureEmbeddedEventStore(c -> eventStorageEngine);
         }
@@ -725,6 +728,7 @@ public class AxonCdiExtension implements Extension {
         configuration = configurer.start();
 
         logger.info("Registering Axon APIs with CDI.");
+
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> configuration));
         addIfNotConfigured(CommandBus.class, commandBusProducer,
@@ -733,14 +737,18 @@ public class AxonCdiExtension implements Extension {
                 commandGatewayProducer,
                 configuration::commandGateway,
                 afterBeanDiscovery);
-        addIfNotConfigured(QueryBus.class, queryBusProducer, configuration::queryBus, afterBeanDiscovery);
-        addIfNotConfigured(QueryGateway.class, queryGatewayProducer, configuration::queryGateway, afterBeanDiscovery);
+        addIfNotConfigured(QueryBus.class, queryBusProducer,
+                configuration::queryBus, afterBeanDiscovery);
+        addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
+                configuration::queryGateway, afterBeanDiscovery);
         addIfNotConfigured(QueryUpdateEmitter.class,
                 queryUpdateEmitterProducer,
                 configuration::queryUpdateEmitter,
                 afterBeanDiscovery);
-        addIfNotConfigured(EventBus.class, eventBusProducer, configuration::eventBus, afterBeanDiscovery);
-        addIfNotConfigured(Serializer.class, serializerProducer, configuration::serializer, afterBeanDiscovery);
+        addIfNotConfigured(EventBus.class, eventBusProducer,
+                configuration::eventBus, afterBeanDiscovery);
+        addIfNotConfigured(Serializer.class, serializerProducer,
+                configuration::serializer, afterBeanDiscovery);
 
         logger.info("Axon Framework configuration complete.");
     }
