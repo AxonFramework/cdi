@@ -761,17 +761,22 @@ public class AxonCdiExtension implements Extension {
             EventHandlingConfiguration eventHandlingConfiguration) {
         for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
             // TODO: 8/31/2018 should we always create instances? or should we check whether it already exists?
+            // Milan: Need to understand this better. At this point, no instances
+            // would be created since the application has not started yet.
             Object instance = messageHandler.getBean().create(beanManager.createCreationalContext(null));
+
             if (messageHandler.isEventHandler()) {
-                logger.info("Registering event handler {}.", instance.getClass().getSimpleName());
+                logger.info("Registering event handler: {}.", instance.getClass().getSimpleName());
                 eventHandlingConfiguration.registerEventHandler(c -> instance);
             }
+
             if (messageHandler.isCommandHandler()) {
-                logger.info("Registering command handler {}.", instance.getClass().getSimpleName());
+                logger.info("Registering command handler: {}.", instance.getClass().getSimpleName());
                 configurer.registerCommandHandler(c -> instance);
             }
+
             if (messageHandler.isQueryHandler()) {
-                logger.info("Registering query handler {}.", instance.getClass().getSimpleName());
+                logger.info("Registering query handler: {}.", instance.getClass().getSimpleName());
                 configurer.registerQueryHandler(c -> instance);
             }
         }
@@ -780,27 +785,29 @@ public class AxonCdiExtension implements Extension {
     @SuppressWarnings("unchecked")
     private void registerAggregates(BeanManager beanManager, Configurer configurer) {
         aggregates.forEach(aggregateDefinition -> {
-            logger.info("Registering aggregate {}.", aggregateDefinition.aggregateType().getSimpleName());
+            logger.info("Registering aggregate: {}.", aggregateDefinition.aggregateType().getSimpleName());
 
-            AggregateConfigurer<?> aggregateConf = AggregateConfigurer.defaultConfiguration(aggregateDefinition.aggregateType());
+            AggregateConfigurer<?> aggregateConfigurer
+                    = AggregateConfigurer.defaultConfiguration(aggregateDefinition.aggregateType());
+            
             if (aggregateDefinition.repository().isPresent()) {
-                aggregateConf.configureRepository(
+                aggregateConfigurer.configureRepository(
                         c -> produce(beanManager, aggregateRepositoryProducerMap
                                 .get(aggregateDefinition.repository().get())));
             } else {
                 if (aggregateRepositoryProducerMap.containsKey(aggregateDefinition.repositoryName())) {
-                    aggregateConf.configureRepository(
+                    aggregateConfigurer.configureRepository(
                             c -> produce(beanManager, aggregateRepositoryProducerMap
                                     .get(aggregateDefinition.repositoryName())));
                 } else {
                     // TODO: 8/29/2018 check how to do in CDI world: register repository as a bean
                     // TODO: 8/29/2018 check how to do in CDI world: aggregate factory
-                    aggregateDefinition.snapshotTriggerDefinition().ifPresent(triggerDefinition -> aggregateConf
+                    aggregateDefinition.snapshotTriggerDefinition().ifPresent(triggerDefinition -> aggregateConfigurer
                             .configureSnapshotTrigger(
                                     c -> produce(beanManager, snapshotTriggerDefinitionProducerMap
                                             .get(triggerDefinition))));
                     if (aggregateDefinition.isJpaAggregate()) {
-                        aggregateConf.configureRepository(
+                        aggregateConfigurer.configureRepository(
                                 c -> new GenericJpaRepository(
                                         // TODO: 8/29/2018 what to do about default EntityManagerProvider (check spring impl)
                                         c.getComponent(EntityManagerProvider.class),
@@ -815,7 +822,7 @@ public class AxonCdiExtension implements Extension {
             }
 
             if (aggregateDefinition.commandTargetResolver().isPresent()) {
-                aggregateConf.configureCommandTargetResolver(
+                aggregateConfigurer.configureCommandTargetResolver(
                         c -> produce(beanManager,
                                 commandTargetResolverProducerMap.get(aggregateDefinition.commandTargetResolver().get())));
             } else {
@@ -826,13 +833,12 @@ public class AxonCdiExtension implements Extension {
                         .map(a -> a.commandTargetResolver().get())
                         .noneMatch(resolver::equals))
                         .findFirst() // TODO: 8/29/2018 what if there are more "default" resolvers
-                        .ifPresent(
-                                resolver -> aggregateConf.configureCommandTargetResolver(
-                                        c -> produce(beanManager,
-                                                commandTargetResolverProducerMap.get(resolver))));
+                        .ifPresent(resolver -> aggregateConfigurer.configureCommandTargetResolver(
+                        c -> produce(beanManager,
+                                commandTargetResolverProducerMap.get(resolver))));
             }
 
-            configurer.configureAggregate(aggregateConf);
+            configurer.configureAggregate(aggregateConfigurer);
         });
     }
 
