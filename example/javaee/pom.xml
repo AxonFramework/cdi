@@ -6,14 +6,13 @@
     <name>Axon Framework Java EE Example</name>
     <groupId>org.axonframework</groupId>
     <artifactId>javaee-axon-example</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>3.3.5-SNAPSHOT</version>
     <packaging>war</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <javaee-api.version>7.0</javaee-api.version>
         <axon.version>3.3.5</axon.version>
-        <axon-cdi.version>0.1-SNAPSHOT</axon-cdi.version>
         <junit.version>4.12</junit.version>
     </properties>
 
@@ -27,7 +26,7 @@
         <dependency>
             <groupId>org.axonframework</groupId>
             <artifactId>axon-cdi</artifactId>
-            <version>${axon-cdi.version}</version>
+            <version>${axon.version}-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

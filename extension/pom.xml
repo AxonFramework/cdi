@@ -7,7 +7,7 @@
     <name>Axon Framework CDI Support</name>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-cdi</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>3.3.5-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -33,6 +33,7 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
+        <!-- TODO What should be included as a default logging implmentation? -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
@@ -57,7 +58,6 @@
 
     <build>
         <defaultGoal>clean package</defaultGoal>
-        <finalName>${project.artifactId}</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
