@@ -764,23 +764,25 @@ public class AxonCdiExtension implements Extension {
             // TODO: 8/31/2018 should we always create instances? or should we check whether it already exists?
             // Milan: Need to understand this better. At this point, no instances
             // would be created since the application has not started yet.
-            Component<Object> instanceComponent = new Component<>(() -> null,
-                                                                  "messageHandler"
-                    , c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
+            Component<Object> component = new Component<>(() -> null, "messageHandler",
+                    c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
 
             if (messageHandler.isEventHandler()) {
-//                logger.info("Registering event handler: {}.", instance.getClass().getSimpleName());
-                eventHandlingConfiguration.registerEventHandler(c -> instanceComponent.get());
+                logger.info("Registering event handler: {}.",
+                        messageHandler.getBean().getBeanClass().getSimpleName());
+                eventHandlingConfiguration.registerEventHandler(c -> component.get());
             }
 
             if (messageHandler.isCommandHandler()) {
-//                logger.info("Registering command handler: {}.", instance.getClass().getSimpleName());
-                configurer.registerCommandHandler(c -> instanceComponent.get());
+                logger.info("Registering command handler: {}.",
+                        messageHandler.getBean().getBeanClass().getSimpleName());
+                configurer.registerCommandHandler(c -> component.get());
             }
 
             if (messageHandler.isQueryHandler()) {
-//                logger.info("Registering query handler: {}.", instance.getClass().getSimpleName());
-                configurer.registerQueryHandler(c -> instanceComponent.get());
+                logger.info("Registering query handler: {}.",
+                        messageHandler.getBean().getBeanClass().getSimpleName());
+                configurer.registerQueryHandler(c -> component.get());
             }
         }
     }
@@ -792,7 +794,7 @@ public class AxonCdiExtension implements Extension {
 
             AggregateConfigurer<?> aggregateConfigurer
                     = AggregateConfigurer.defaultConfiguration(aggregateDefinition.aggregateType());
-            
+
             if (aggregateDefinition.repository().isPresent()) {
                 aggregateConfigurer.configureRepository(
                         c -> produce(beanManager, aggregateRepositoryProducerMap
