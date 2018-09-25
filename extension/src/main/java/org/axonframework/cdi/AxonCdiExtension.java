@@ -32,6 +32,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Component;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
@@ -763,21 +764,23 @@ public class AxonCdiExtension implements Extension {
             // TODO: 8/31/2018 should we always create instances? or should we check whether it already exists?
             // Milan: Need to understand this better. At this point, no instances
             // would be created since the application has not started yet.
-            Object instance = messageHandler.getBean().create(beanManager.createCreationalContext(null));
+            Component<Object> instanceComponent = new Component<>(() -> null,
+                                                                  "messageHandler"
+                    , c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
 
             if (messageHandler.isEventHandler()) {
-                logger.info("Registering event handler: {}.", instance.getClass().getSimpleName());
-                eventHandlingConfiguration.registerEventHandler(c -> instance);
+//                logger.info("Registering event handler: {}.", instance.getClass().getSimpleName());
+                eventHandlingConfiguration.registerEventHandler(c -> instanceComponent.get());
             }
 
             if (messageHandler.isCommandHandler()) {
-                logger.info("Registering command handler: {}.", instance.getClass().getSimpleName());
-                configurer.registerCommandHandler(c -> instance);
+//                logger.info("Registering command handler: {}.", instance.getClass().getSimpleName());
+                configurer.registerCommandHandler(c -> instanceComponent.get());
             }
 
             if (messageHandler.isQueryHandler()) {
-                logger.info("Registering query handler: {}.", instance.getClass().getSimpleName());
-                configurer.registerQueryHandler(c -> instance);
+//                logger.info("Registering query handler: {}.", instance.getClass().getSimpleName());
+                configurer.registerQueryHandler(c -> instanceComponent.get());
             }
         }
     }
