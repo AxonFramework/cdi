@@ -17,7 +17,7 @@ The artifact is not yet released to Maven Central and you have to build it local
       <dependency>
         <groupId>org.axonframework</groupId>
         <artifactId>axon-cdi</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>3.3.5-SNAPSHOT</version>
       </dependency>
 
 ### Automatic Configuration
