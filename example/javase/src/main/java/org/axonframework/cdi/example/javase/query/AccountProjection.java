@@ -6,9 +6,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import org.axonframework.cdi.example.javase.command.AccountCreatedEvent;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 
@@ -19,9 +17,6 @@ public class AccountProjection {
 
     private static final Logger logger = Logger.getLogger(
             MethodHandles.lookup().lookupClass().getName());
-
-    @Inject
-    private CommandGateway commandGateway;
 
     @EventHandler
     public void on(AccountCreatedEvent event) {
