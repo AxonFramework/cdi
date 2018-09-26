@@ -11,7 +11,6 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
@@ -68,7 +67,7 @@ public class AxonCdiExtension implements Extension {
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
     private Configurer configurer;
-    private Configuration configuration;
+    private static Configuration configuration;
 
     private final List<AggregateDefinition> aggregates = new ArrayList<>();
     private final Map<String, Producer<Repository>> aggregateRepositoryProducerMap = new HashMap<>();
@@ -471,39 +470,9 @@ public class AxonCdiExtension implements Extension {
 
     /**
      * Registration of Axon components in CDI registry.
-     *
-     * @param afterBeanDiscovery after bean discovery event.
-     * @param beanManager bean manager.
      */
     void afterBeanDiscovery(@Observes final AfterBeanDiscovery afterBeanDiscovery,
             final BeanManager beanManager) {
-        logger.info("Registering Axon APIs with CDI.");
-
-        addIfNotConfigured(CommandGateway.class,
-                commandGatewayProducer,
-                () -> configuration.commandGateway(),
-                afterBeanDiscovery);
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(Configuration.class, () -> configuration));
-        addIfNotConfigured(CommandBus.class, commandBusProducer,
-                () -> configuration.commandBus(), afterBeanDiscovery);
-        addIfNotConfigured(QueryBus.class, queryBusProducer,
-                () -> configuration.queryBus(), afterBeanDiscovery);
-        addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
-                () -> configuration.queryGateway(), afterBeanDiscovery);
-        addIfNotConfigured(QueryUpdateEmitter.class,
-                queryUpdateEmitterProducer,
-                () -> configuration.queryUpdateEmitter(),
-                afterBeanDiscovery);
-        addIfNotConfigured(EventBus.class, eventBusProducer,
-                () -> configuration.eventBus(), afterBeanDiscovery);
-        addIfNotConfigured(Serializer.class, serializerProducer,
-                () -> configuration.serializer(), afterBeanDiscovery);
-    }
-
-    void afterDeploymentValidation(@Observes final AfterDeploymentValidation afterDeploymentValidation,
-            final BeanManager beanManager) {
-
         logger.info("Starting Axon Framework configuration.");
 
         if (this.configurerProducer != null) {
@@ -729,7 +698,7 @@ public class AxonCdiExtension implements Extension {
         // configuration components.
         registerAggregates(beanManager, configurer);
         registerSagaStore(beanManager, configurer);
-        registerSagas(beanManager, null, configurer);
+        registerSagas(beanManager, afterBeanDiscovery, configurer);
         registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
 
         logger.info("Axon Framework configuration complete.");
@@ -737,6 +706,29 @@ public class AxonCdiExtension implements Extension {
         logger.info("Starting Axon configuration.");
 
         configuration = configurer.start();
+
+        logger.info("Registering Axon APIs with CDI.");
+
+        addIfNotConfigured(CommandGateway.class,
+                commandGatewayProducer,
+                () -> configuration.commandGateway(),
+                afterBeanDiscovery);
+        afterBeanDiscovery.addBean(
+                new BeanWrapper<>(Configuration.class, () -> configuration));
+        addIfNotConfigured(CommandBus.class, commandBusProducer,
+                () -> configuration.commandBus(), afterBeanDiscovery);
+        addIfNotConfigured(QueryBus.class, queryBusProducer,
+                () -> configuration.queryBus(), afterBeanDiscovery);
+        addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
+                () -> configuration.queryGateway(), afterBeanDiscovery);
+        addIfNotConfigured(QueryUpdateEmitter.class,
+                queryUpdateEmitterProducer,
+                () -> configuration.queryUpdateEmitter(),
+                afterBeanDiscovery);
+        addIfNotConfigured(EventBus.class, eventBusProducer,
+                () -> configuration.eventBus(), afterBeanDiscovery);
+        addIfNotConfigured(Serializer.class, serializerProducer,
+                () -> configuration.serializer(), afterBeanDiscovery);
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
