@@ -11,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
@@ -66,7 +67,7 @@ public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
-
+    private Configurer configurer;
     private Configuration configuration;
 
     private final List<AggregateDefinition> aggregates = new ArrayList<>();
@@ -478,9 +479,6 @@ public class AxonCdiExtension implements Extension {
             final BeanManager beanManager) {
         logger.info("Starting Axon Framework configuration.");
 
-        // Configurer registration.
-        final Configurer configurer;
-
         if (this.configurerProducer != null) {
             configurer = produce(beanManager, configurerProducer);
             logger.info("Starting with an application provided configurer: {}.",
@@ -725,33 +723,37 @@ public class AxonCdiExtension implements Extension {
         registerSagaStore(beanManager, configurer);
         registerSagas(beanManager, afterBeanDiscovery, configurer);
 
-        logger.info("Starting Axon configuration.");
-        configuration = configurer.start();
-
         logger.info("Registering Axon APIs with CDI.");
 
+        addIfNotConfigured(CommandGateway.class,
+                commandGatewayProducer,
+                () -> configuration.commandGateway(),
+                afterBeanDiscovery);
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> configuration));
         addIfNotConfigured(CommandBus.class, commandBusProducer,
-                configuration::commandBus, afterBeanDiscovery);
-        addIfNotConfigured(CommandGateway.class,
-                commandGatewayProducer,
-                configuration::commandGateway,
-                afterBeanDiscovery);
+                () -> configuration.commandBus(), afterBeanDiscovery);
         addIfNotConfigured(QueryBus.class, queryBusProducer,
-                configuration::queryBus, afterBeanDiscovery);
+                () -> configuration.queryBus(), afterBeanDiscovery);
         addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
-                configuration::queryGateway, afterBeanDiscovery);
+                () -> configuration.queryGateway(), afterBeanDiscovery);
         addIfNotConfigured(QueryUpdateEmitter.class,
                 queryUpdateEmitterProducer,
-                configuration::queryUpdateEmitter,
+                () -> configuration.queryUpdateEmitter(),
                 afterBeanDiscovery);
         addIfNotConfigured(EventBus.class, eventBusProducer,
-                configuration::eventBus, afterBeanDiscovery);
+                () -> configuration.eventBus(), afterBeanDiscovery);
         addIfNotConfigured(Serializer.class, serializerProducer,
-                configuration::serializer, afterBeanDiscovery);
+                () -> configuration.serializer(), afterBeanDiscovery);
 
         logger.info("Axon Framework configuration complete.");
+    }
+
+    void afterDeploymentValidation(@Observes final AfterDeploymentValidation afterDeploymentValidation,
+            final BeanManager beanManager) {
+        logger.info("Starting Axon configuration.");
+        
+        configuration = configurer.start();
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
