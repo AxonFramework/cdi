@@ -477,6 +477,33 @@ public class AxonCdiExtension implements Extension {
      */
     void afterBeanDiscovery(@Observes final AfterBeanDiscovery afterBeanDiscovery,
             final BeanManager beanManager) {
+        logger.info("Registering Axon APIs with CDI.");
+
+        addIfNotConfigured(CommandGateway.class,
+                commandGatewayProducer,
+                () -> configuration.commandGateway(),
+                afterBeanDiscovery);
+        afterBeanDiscovery.addBean(
+                new BeanWrapper<>(Configuration.class, () -> configuration));
+        addIfNotConfigured(CommandBus.class, commandBusProducer,
+                () -> configuration.commandBus(), afterBeanDiscovery);
+        addIfNotConfigured(QueryBus.class, queryBusProducer,
+                () -> configuration.queryBus(), afterBeanDiscovery);
+        addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
+                () -> configuration.queryGateway(), afterBeanDiscovery);
+        addIfNotConfigured(QueryUpdateEmitter.class,
+                queryUpdateEmitterProducer,
+                () -> configuration.queryUpdateEmitter(),
+                afterBeanDiscovery);
+        addIfNotConfigured(EventBus.class, eventBusProducer,
+                () -> configuration.eventBus(), afterBeanDiscovery);
+        addIfNotConfigured(Serializer.class, serializerProducer,
+                () -> configuration.serializer(), afterBeanDiscovery);
+    }
+
+    void afterDeploymentValidation(@Observes final AfterDeploymentValidation afterDeploymentValidation,
+            final BeanManager beanManager) {
+
         logger.info("Starting Axon Framework configuration.");
 
         if (this.configurerProducer != null) {
@@ -489,7 +516,6 @@ public class AxonCdiExtension implements Extension {
             configurer = DefaultConfigurer.defaultConfiguration();
         }
 
-        // Entity manager provider registration.
         if (this.entityManagerProviderProducer != null) {
             final EntityManagerProvider entityManagerProvider
                     = produce(beanManager, entityManagerProviderProducer);
@@ -500,7 +526,6 @@ public class AxonCdiExtension implements Extension {
             configurer.registerComponent(EntityManagerProvider.class, c -> entityManagerProvider);
         }
 
-        // Serializer registration.
         if (this.serializerProducer != null) {
             final Serializer serializer = produce(beanManager, serializerProducer);
 
@@ -509,7 +534,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureSerializer(c -> serializer);
         }
 
-        // Event Serializer registration.
         if (this.eventSerializerProducer != null) {
             final Serializer serializer = produce(beanManager, eventSerializerProducer);
 
@@ -518,7 +542,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureEventSerializer(c -> serializer);
         }
 
-        // Message Serializer registration.
         if (this.messageSerializerProducer != null) {
             final Serializer serializer = produce(beanManager, messageSerializerProducer);
 
@@ -527,7 +550,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureMessageSerializer(c -> serializer);
         }
 
-        // Transaction manager registration.
         if (this.transactionManagerProducer != null) {
             final TransactionManager transactionManager
                     = produce(beanManager, transactionManagerProducer);
@@ -537,7 +559,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureTransactionManager(c -> transactionManager);
         }
 
-        // Command bus registration.
         if (this.commandBusProducer != null) {
             final CommandBus commandBus = produce(beanManager, commandBusProducer);
 
@@ -577,7 +598,6 @@ public class AxonCdiExtension implements Extension {
             }));
         }
 
-        // Event handling configuration registration.
         EventHandlingConfiguration eventHandlingConfiguration;
 
         if (eventHandlingConfigurationProducer != null) {
@@ -590,7 +610,6 @@ public class AxonCdiExtension implements Extension {
                 eventHandlingConfiguration.getClass().getSimpleName());
         configurer.registerModule(eventHandlingConfiguration);
 
-        // Event processing configuration registration.
         if (eventProcessingConfigurationProducer != null) {
             EventProcessingConfiguration eventProcessingConfiguration
                     = produce(beanManager, eventProcessingConfigurationProducer);
@@ -601,7 +620,6 @@ public class AxonCdiExtension implements Extension {
             configurer.registerModule(eventProcessingConfiguration);
         }
 
-        // Configurer modules registration
         configurerModuleProducers.forEach(producer -> {
             ConfigurerModule configurerModule = produce(beanManager, producer);
 
@@ -610,9 +628,6 @@ public class AxonCdiExtension implements Extension {
             configurerModule.configureModule(configurer);
         });
 
-        registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
-
-        // Event bus registration.
         if (this.eventBusProducer != null) {
             final EventBus eventBus = produce(beanManager, eventBusProducer);
 
@@ -621,7 +636,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureEventBus(c -> eventBus);
         }
 
-        // Token store registration.
         if (this.tokenStoreProducer != null) {
             final TokenStore tokenStore = produce(beanManager, tokenStoreProducer);
 
@@ -630,7 +644,6 @@ public class AxonCdiExtension implements Extension {
             configurer.registerComponent(TokenStore.class, c -> tokenStore);
         }
 
-        // Listener invocation error handler registration.
         if (this.listenerInvocationErrorHandlerProducer != null) {
             ListenerInvocationErrorHandler listenerInvocationErrorHandler
                     = produce(beanManager, listenerInvocationErrorHandlerProducer);
@@ -642,7 +655,6 @@ public class AxonCdiExtension implements Extension {
                     c -> listenerInvocationErrorHandler);
         }
 
-        // Error handler registration.
         if (this.errorHandlerProducer != null) {
             ErrorHandler errorHandler = produce(beanManager, errorHandlerProducer);
 
@@ -665,7 +677,6 @@ public class AxonCdiExtension implements Extension {
                 .collect(Collectors.toList());
         configurer.configureCorrelationDataProviders(c -> correlationDataProviders);
 
-        // Event upcasters registration
         this.eventUpcasterProducers
                 .forEach(producer -> {
                     EventUpcaster eventUpcaster = produce(beanManager, producer);
@@ -674,7 +685,6 @@ public class AxonCdiExtension implements Extension {
                     configurer.registerEventUpcaster(c -> eventUpcaster);
                 });
 
-        // QueryBus registration.
         if (this.queryBusProducer != null) {
             QueryBus queryBus = produce(beanManager, queryBusProducer);
 
@@ -683,7 +693,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureQueryBus(c -> queryBus);
         }
 
-        // QueryGateway registration.
         if (this.queryGatewayProducer != null) {
             QueryGateway queryGateway = produce(beanManager, queryGatewayProducer);
 
@@ -692,7 +701,6 @@ public class AxonCdiExtension implements Extension {
             configurer.registerComponent(QueryGateway.class, c -> queryGateway);
         }
 
-        // QueryUpdateEmitter registration.
         if (this.queryUpdateEmitterProducer != null) {
             QueryUpdateEmitter queryUpdateEmitter = produce(beanManager, queryUpdateEmitterProducer);
 
@@ -701,7 +709,6 @@ public class AxonCdiExtension implements Extension {
             configurer.configureQueryUpdateEmitter(c -> queryUpdateEmitter);
         }
 
-        // DeadlineManager registration.
         if (this.deadlineManagerProducer != null) {
             DeadlineManager deadlineManager = produce(beanManager, deadlineManagerProducer);
 
@@ -710,7 +717,6 @@ public class AxonCdiExtension implements Extension {
             configurer.registerComponent(DeadlineManager.class, c -> deadlineManager);
         }
 
-        // Event storage engine registration.
         if (this.eventStorageEngineProducer != null) {
             final EventStorageEngine eventStorageEngine = produce(beanManager, eventStorageEngineProducer);
 
@@ -719,40 +725,17 @@ public class AxonCdiExtension implements Extension {
             configurer.configureEmbeddedEventStore(c -> eventStorageEngine);
         }
 
+        // Now need to begin registering application components rather than
+        // configuration components.
         registerAggregates(beanManager, configurer);
         registerSagaStore(beanManager, configurer);
-        registerSagas(beanManager, afterBeanDiscovery, configurer);
-
-        logger.info("Registering Axon APIs with CDI.");
-
-        addIfNotConfigured(CommandGateway.class,
-                commandGatewayProducer,
-                () -> configuration.commandGateway(),
-                afterBeanDiscovery);
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(Configuration.class, () -> configuration));
-        addIfNotConfigured(CommandBus.class, commandBusProducer,
-                () -> configuration.commandBus(), afterBeanDiscovery);
-        addIfNotConfigured(QueryBus.class, queryBusProducer,
-                () -> configuration.queryBus(), afterBeanDiscovery);
-        addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
-                () -> configuration.queryGateway(), afterBeanDiscovery);
-        addIfNotConfigured(QueryUpdateEmitter.class,
-                queryUpdateEmitterProducer,
-                () -> configuration.queryUpdateEmitter(),
-                afterBeanDiscovery);
-        addIfNotConfigured(EventBus.class, eventBusProducer,
-                () -> configuration.eventBus(), afterBeanDiscovery);
-        addIfNotConfigured(Serializer.class, serializerProducer,
-                () -> configuration.serializer(), afterBeanDiscovery);
+        registerSagas(beanManager, null, configurer);
+        registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
 
         logger.info("Axon Framework configuration complete.");
-    }
 
-    void afterDeploymentValidation(@Observes final AfterDeploymentValidation afterDeploymentValidation,
-            final BeanManager beanManager) {
         logger.info("Starting Axon configuration.");
-        
+
         configuration = configurer.start();
     }
 
@@ -763,9 +746,6 @@ public class AxonCdiExtension implements Extension {
     private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
             EventHandlingConfiguration eventHandlingConfiguration) {
         for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
-            // TODO: 8/31/2018 should we always create instances? or should we check whether it already exists?
-            // Milan: Need to understand this better. At this point, no instances
-            // would be created since the application has not started yet.
             Component<Object> component = new Component<>(() -> null, "messageHandler",
                     c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
 
@@ -875,10 +855,9 @@ public class AxonCdiExtension implements Extension {
                 SagaConfiguration<?> sagaConfiguration = SagaConfiguration
                         .subscribingSagaManager(sagaDefinition.sagaType());
 
-                afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
-                        SagaConfiguration.class,
-                        () -> sagaConfiguration));
-
+//                afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
+//                        SagaConfiguration.class,
+//                        () -> sagaConfiguration));
                 sagaDefinition.sagaStore()
                         .ifPresent(sagaStore -> sagaConfiguration
                         .configureSagaStore(c -> produce(beanManager, sagaStoreProducerMap.get(sagaStore))));
@@ -894,8 +873,6 @@ public class AxonCdiExtension implements Extension {
         }
     }
 
-    // TODO: 8/29/2018 should we store produced components in some kind of cache
-    // and extract them if present?
     private <T> T produce(BeanManager beanManager, Producer<T> producer) {
         // Antoine: Is createCreationalContext(null) is correct here?
         // If not, what should I do instead? Again, many of these things
