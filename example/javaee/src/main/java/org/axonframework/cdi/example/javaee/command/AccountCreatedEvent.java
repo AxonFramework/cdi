@@ -1,11 +1,16 @@
 package org.axonframework.cdi.example.javaee.command;
 
+import java.math.BigDecimal;
+
+import javax.enterprise.inject.Vetoed;
+
+@Vetoed
 public class AccountCreatedEvent {
 
     private final String accountId;
-    private final Double overdraftLimit;
+    private final BigDecimal overdraftLimit;
 
-    public AccountCreatedEvent(String accountId, Double overdraftLimit) {
+    public AccountCreatedEvent(String accountId, BigDecimal overdraftLimit) {
         this.accountId = accountId;
         this.overdraftLimit = overdraftLimit;
     }
@@ -14,13 +19,12 @@ public class AccountCreatedEvent {
         return accountId;
     }
 
-    public Double getOverdraftLimit() {
+    public BigDecimal getOverdraftLimit() {
         return overdraftLimit;
     }
 
     @Override
     public String toString() {
-        return "Account Created Event with accountId=" + accountId
-                + ", overdraftLimit=" + overdraftLimit;
+        return "AccountCreatedEvent [accountId=" + accountId + ", overdraftLimit=" + overdraftLimit + "]";
     }
 }
