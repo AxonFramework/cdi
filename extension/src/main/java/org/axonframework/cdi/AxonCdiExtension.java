@@ -706,10 +706,6 @@ public class AxonCdiExtension implements Extension {
 
         logger.info("Axon Framework configuration complete.");
 
-        logger.info("Starting Axon configuration.");
-
-        configuration = configurer.start();
-
         logger.info("Registering Axon APIs with CDI.");
 
         addIfNotConfigured(CommandGateway.class,
@@ -735,8 +731,11 @@ public class AxonCdiExtension implements Extension {
     }
 
     void afterDeploymentValidation(
-            @Observes final AfterDeploymentValidation afterDeploymentValidation, 
+            @Observes final AfterDeploymentValidation afterDeploymentValidation,
             final BeanManager beanManager) {
+        logger.info("Starting Axon configuration.");
+
+        configuration = configurer.start();
     }
 
     void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
@@ -858,9 +857,9 @@ public class AxonCdiExtension implements Extension {
                 SagaConfiguration<?> sagaConfiguration = SagaConfiguration
                         .subscribingSagaManager(sagaDefinition.sagaType());
 
-//                afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
-//                        SagaConfiguration.class,
-//                        () -> sagaConfiguration));
+                afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
+                        SagaConfiguration.class,
+                        () -> sagaConfiguration));
                 sagaDefinition.sagaStore()
                         .ifPresent(sagaStore -> sagaConfiguration
                         .configureSagaStore(c -> produce(beanManager, sagaStoreProducerMap.get(sagaStore))));
