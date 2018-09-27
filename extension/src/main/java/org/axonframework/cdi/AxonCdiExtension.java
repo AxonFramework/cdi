@@ -9,8 +9,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Destroyed;
+import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
@@ -473,6 +475,7 @@ public class AxonCdiExtension implements Extension {
      */
     void afterBeanDiscovery(@Observes final AfterBeanDiscovery afterBeanDiscovery,
             final BeanManager beanManager) {
+
         logger.info("Starting Axon Framework configuration.");
 
         if (this.configurerProducer != null) {
@@ -729,6 +732,14 @@ public class AxonCdiExtension implements Extension {
                 () -> configuration.eventBus(), afterBeanDiscovery);
         addIfNotConfigured(Serializer.class, serializerProducer,
                 () -> configuration.serializer(), afterBeanDiscovery);
+    }
+
+    void afterDeploymentValidation(
+            @Observes final AfterDeploymentValidation afterDeploymentValidation, 
+            final BeanManager beanManager) {
+    }
+
+    void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
     }
 
     void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
