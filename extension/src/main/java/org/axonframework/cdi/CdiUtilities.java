@@ -5,8 +5,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import static java.util.Arrays.stream;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
@@ -29,6 +31,14 @@ public class CdiUtilities {
             final Type beanType) {
         return (T) beanManager.getReference(bean, beanType,
                 beanManager.createCreationalContext(bean));
+    }
+
+    public static <T> T getReference(final BeanManager beanManager, final Class<T> clazz) {
+        final Set<Bean<?>> beans = beanManager.getBeans(clazz);
+        final Bean<?> bean = beanManager.resolve(beans);
+
+        final CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);
+        return (T) beanManager.getReference(bean, clazz, creationalContext);
     }
 
     /**
@@ -78,7 +88,7 @@ public class CdiUtilities {
             return named.value();
         }
 
-        // TODO: Should not try to derive the name of a member that does not 
+        // TODO: Should not try to derive the name of a member that does not
         // have the @Named annotation on it.
         return annotatedMember.getJavaMember().getName();
     }
