@@ -738,6 +738,8 @@ public class AxonCdiExtension implements Extension {
     void afterDeploymentValidation(
             @Observes final AfterDeploymentValidation afterDeploymentValidation,
             final BeanManager beanManager) {
+        // Ensure the configuration is started.
+        CdiUtilities.getReference(beanManager, Configuration.class).commandBus();
     }
 
     void init(@Observes @Initialized(ApplicationScoped.class) Object initialized) {
@@ -751,7 +753,7 @@ public class AxonCdiExtension implements Extension {
 
     private Configuration startConfiguration(Configurer configurer) {
         logger.info("Starting Axon configuration.");
-        
+
         return configurer.start();
     }
 
