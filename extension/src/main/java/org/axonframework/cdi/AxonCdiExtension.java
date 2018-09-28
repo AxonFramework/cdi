@@ -15,6 +15,7 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedMember;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessBean;
@@ -68,8 +69,6 @@ public class AxonCdiExtension implements Extension {
 
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
-    private Configurer configurer;
-    private static Configuration configuration;
 
     private final List<AggregateDefinition> aggregates = new ArrayList<>();
     private final Map<String, Producer<Repository>> aggregateRepositoryProducerMap = new HashMap<>();
@@ -475,8 +474,9 @@ public class AxonCdiExtension implements Extension {
      */
     void afterBeanDiscovery(@Observes final AfterBeanDiscovery afterBeanDiscovery,
             final BeanManager beanManager) {
-
         logger.info("Starting Axon Framework configuration.");
+
+        Configurer configurer;
 
         if (this.configurerProducer != null) {
             configurer = produce(beanManager, configurerProducer);
@@ -708,26 +708,31 @@ public class AxonCdiExtension implements Extension {
 
         logger.info("Registering Axon APIs with CDI.");
 
+        afterBeanDiscovery.addBean(
+                new BeanWrapper<>(Configuration.class, () -> configurer.buildConfiguration()));
         addIfNotConfigured(CommandGateway.class,
                 commandGatewayProducer,
-                () -> configuration.commandGateway(),
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).commandGateway(),
                 afterBeanDiscovery);
-        afterBeanDiscovery.addBean(
-                new BeanWrapper<>(Configuration.class, () -> configuration));
         addIfNotConfigured(CommandBus.class, commandBusProducer,
-                () -> configuration.commandBus(), afterBeanDiscovery);
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).commandBus(),
+                afterBeanDiscovery);
         addIfNotConfigured(QueryBus.class, queryBusProducer,
-                () -> configuration.queryBus(), afterBeanDiscovery);
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).queryBus(),
+                afterBeanDiscovery);
         addIfNotConfigured(QueryGateway.class, queryGatewayProducer,
-                () -> configuration.queryGateway(), afterBeanDiscovery);
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).queryGateway(),
+                afterBeanDiscovery);
         addIfNotConfigured(QueryUpdateEmitter.class,
                 queryUpdateEmitterProducer,
-                () -> configuration.queryUpdateEmitter(),
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).queryUpdateEmitter(),
                 afterBeanDiscovery);
         addIfNotConfigured(EventBus.class, eventBusProducer,
-                () -> configuration.eventBus(), afterBeanDiscovery);
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).eventBus(),
+                afterBeanDiscovery);
         addIfNotConfigured(Serializer.class, serializerProducer,
-                () -> configuration.serializer(), afterBeanDiscovery);
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).serializer(),
+                afterBeanDiscovery);
     }
 
     void afterDeploymentValidation(
@@ -735,14 +740,16 @@ public class AxonCdiExtension implements Extension {
             final BeanManager beanManager) {
         logger.info("Starting Axon configuration.");
 
-        configuration = configurer.start();
+        CdiUtilities.getReference(CdiUtilities.getBeanManager(), Configuration.class).start();
     }
 
-    void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+    void init(@Observes @Initialized(ApplicationScoped.class) Object initialized) {
     }
 
-    void beforeShutdown(@Observes @Destroyed(ApplicationScoped.class) final Object event) {
-        configuration.shutdown();
+    void destroy(@Observes @Destroyed(ApplicationScoped.class) final Object destroyed) {
+    }
+
+    void beforeShutdown(@Observes BeforeShutdown event, BeanManager beanManager) {
     }
 
     private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,

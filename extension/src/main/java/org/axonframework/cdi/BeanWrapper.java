@@ -9,15 +9,22 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.PassivationCapable;
 import javax.enterprise.util.AnnotationLiteral;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
+import org.axonframework.config.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // Antoine: Is there a better way to do this while still sticking to CDI 1.1/
 // Java EE 7?
 public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
+
+    private static final Logger logger = LoggerFactory.getLogger(
+            MethodHandles.lookup().lookupClass());
 
     private final String name;
     private final Class<T> clazz;
@@ -41,6 +48,11 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
     @Override
     // Antoine: Is this correct? Should I be doing something additional?
     public void destroy(T instance, final CreationalContext<T> context) {
+        if (clazz.equals(Configuration.class)) {
+            logger.info("Shutting down Axon configuration.");
+            ((Configuration) instance).shutdown();
+        }
+
         instance = null;
         context.release();
     }
