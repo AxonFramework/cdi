@@ -8,55 +8,26 @@
     <description>Provides official Axon support for the CDI programming model.</description>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-cdi</artifactId>
-    <version>3.3.5-alpha-1-SNAPSHOT</version>
+    <version>3.3-alpha1-SNAPSHOT</version>
     <inceptionYear>2018</inceptionYear>
     <url>https://github.com/AxonFramework/cdi</url>
+
     <licenses>
         <license>
             <name>Apache 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
+
     <issueManagement>
         <system>GitHub</system>
         <url>https://github.com/AxonFramework/cdi/issues</url>
     </issueManagement>
 
-    <profiles>
-        <profile>
-            <id>release-sign-artifacts</id>
-            <activation>
-                <property>
-                    <name>performRelease</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <!--suppress MavenModelInspection -->
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <axon.version>3.3.5</axon.version>
+        <axon.version>3.3.6</axon.version>
         <javaee-api.version>7.0</javaee-api.version>
     </properties>
 
@@ -77,15 +48,14 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
-        <!-- TODO What should be included as a default logging implmentation? -->
+
+        <!-- Test -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.25</version>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
-
-        <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -176,6 +146,37 @@
         </pluginManagement>
     </build>
 
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <!--suppress MavenModelInspection -->
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <!-- deploy and release configuration -->
     <distributionManagement>
         <snapshotRepository>
@@ -191,7 +192,7 @@
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
+        <connection>scm:git:git://github.com/AxonFramework/cdi.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/cdi.git</developerConnection>
         <url>https://github.com/AxonFramework/cdi</url>
         <tag>HEAD</tag>
