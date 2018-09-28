@@ -709,7 +709,7 @@ public class AxonCdiExtension implements Extension {
         logger.info("Registering Axon APIs with CDI.");
 
         afterBeanDiscovery.addBean(
-                new BeanWrapper<>(Configuration.class, () -> configurer.buildConfiguration()));
+                new BeanWrapper<>(Configuration.class, () -> startConfiguration(configurer)));
         addIfNotConfigured(CommandGateway.class,
                 commandGatewayProducer,
                 () -> CdiUtilities.getReference(beanManager, Configuration.class).commandGateway(),
@@ -738,9 +738,6 @@ public class AxonCdiExtension implements Extension {
     void afterDeploymentValidation(
             @Observes final AfterDeploymentValidation afterDeploymentValidation,
             final BeanManager beanManager) {
-        logger.info("Starting Axon configuration.");
-
-        CdiUtilities.getReference(CdiUtilities.getBeanManager(), Configuration.class).start();
     }
 
     void init(@Observes @Initialized(ApplicationScoped.class) Object initialized) {
@@ -750,6 +747,12 @@ public class AxonCdiExtension implements Extension {
     }
 
     void beforeShutdown(@Observes BeforeShutdown event, BeanManager beanManager) {
+    }
+
+    private Configuration startConfiguration(Configurer configurer) {
+        logger.info("Starting Axon configuration.");
+        
+        return configurer.start();
     }
 
     private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
