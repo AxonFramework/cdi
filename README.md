@@ -11,8 +11,16 @@ The current minimum supported versions are:
 We have so far tested sucessfully against Payara, WildFly, JBoss EAP, TomEE and WebLogic. We will test the module with Thorntail (formerly WildFly Swarm) and WebSphere Liberty/Open Liberty. A contribution testing against WebSphere classic is welcome.
 
 ## Usage
+To use the module, simply add the following dependency from Maven Central:
 
-The artifact is not yet released to Maven Central and you have to build it locally for the time being. Once you have built the artifact locally, simply add the following dependency:
+      <dependency>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon-cdi</artifactId>
+        <version>3.3-alpha1</version>
+      </dependency>
+
+## Using Snapshot
+To use the snapshot version on the master branch, you will need to build it locally for the time being. Once you have built the artifact locally, simply add the following dependency:
 
       <dependency>
         <groupId>org.axonframework</groupId>
@@ -62,9 +70,9 @@ Event handlers and query handlers must be CDI beans. They will be automatically 
 Please have a look at the examples in the [example](/example) folder.
 
 ### Java EE
-The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly, JBoss EAP and TomEE.
+The [Java EE](/example/javaee) example demonstrates usage inside any Java EE 7+ compatible application server much as Payara or WildFly. The example is a generic Maven web application you should be able to build on any IDE, generate a Java EE 7 war and deploy to your favorite application server. We have so far tested sucessfully against Payara, WildFly, JBoss EAP, TomEE and WebLogic.
 
-For convenience, we have added Cargo configurations in separate Maven profiles for each supported and tested application server.
+For convenience, we have added Cargo configurations in separate Maven profiles for most supported and tested application servers.
 
 * To run the example against WildFly, simply execute the Maven target: `mvn package cargo:run -Pwildfly`
 * To run the example against JBoss EAP, simply execute the Maven target: `mvn package cargo:run -Pjboss`
@@ -93,7 +101,7 @@ If you want to use the JPA based event store inside of a container (e.g. Payara 
 Please see the examples for details.
 
 ## Roadmap
-The module currently does not support sagas, snapshoters and subscription queries. Such support will be added as soon as possible.
+The module is currently in very early alpha state but is likely fairly feature complete. We are actively maturing it to a first release stage. We welcome early adopters and contributors.
 
 ## Known Issues
 The following are the known issues with the extension. Please also look at our [GitHub issue tracker](https://github.com/AxonFramework/cdi/issues).
