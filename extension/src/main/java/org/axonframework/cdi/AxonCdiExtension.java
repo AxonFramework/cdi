@@ -710,10 +710,6 @@ public class AxonCdiExtension implements Extension {
 
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> startConfiguration(configurer)));
-        addIfNotConfigured(CommandGateway.class,
-                commandGatewayProducer,
-                () -> CdiUtilities.getReference(beanManager, Configuration.class).commandGateway(),
-                afterBeanDiscovery);
         addIfNotConfigured(CommandBus.class, commandBusProducer,
                 () -> CdiUtilities.getReference(beanManager, Configuration.class).commandBus(),
                 afterBeanDiscovery);
