@@ -28,7 +28,7 @@ public class AccountApplication {
         eventBus.registerDispatchInterceptor(new EventLoggingInterceptor());
         commandGateway.sendAndWait(new CreateAccountCommand("4711", 1000D));
         queryGateway.send("4711", Double.class, 1, TimeUnit.SECONDS)
-                    .forEach(System.out::println);
+                .forEach(System.out::println);
     }
 
     public static void main(final String[] args) {

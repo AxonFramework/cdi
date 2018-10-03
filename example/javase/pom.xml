@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <axon.version>3.3.6</axon.version>
-        <axon-cdi.version>3.3-alpha1</axon-cdi.version>
+        <axon-cdi.version>3.3-alpha2-SNAPSHOT</axon-cdi.version>
         <weld.version>3.0.5.Final</weld.version>
         <junit.version>4.12</junit.version>
     </properties>
@@ -28,6 +28,11 @@
             <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
             <version>${weld.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.25</version>
         </dependency>
 
         <!-- Testing -->
