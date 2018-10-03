@@ -25,7 +25,7 @@ To use the snapshot version on the master branch, you will need to build it loca
       <dependency>
         <groupId>org.axonframework</groupId>
         <artifactId>axon-cdi</artifactId>
-        <version>3.3.5-alpha-1-SNAPSHOT</version>
+        <version>3.3-alpha2-SNAPSHOT</version>
       </dependency>
 
 ### Automatic Configuration
