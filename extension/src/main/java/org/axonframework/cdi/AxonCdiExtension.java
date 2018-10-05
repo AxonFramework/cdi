@@ -87,7 +87,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<Serializer> messageSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
-    private Producer<CommandGateway> commandGatewayProducer;
+//     private Producer<CommandGateway> commandGatewayProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
@@ -105,23 +105,29 @@ public class AxonCdiExtension implements Extension {
     private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
     private Producer<EventProcessingConfiguration> eventProcessingConfigurationProducer;
 
-    // Antoine: Many of the beans and producers I am processing may use
+    // Mark: Many of the beans and producers I am processing may use
     // container resources such as entity managers, etc. I believe this means
     // I should be handling them as late as possible to avoid initialization
     // timing issues. Right now things are processed as they make
     // "semantic" sense. Do you think this could be improved to do the same
     // processing later?
-    // Application beans are not eagerly instantiated by default.
-    // The operations you are doing in this extension trigger eager instantiation.
-    // I think we can find something less verbose and allowing late instantiation
     /**
      * Scans all annotated types with the {@link Aggregate} annotation and
      * collects them for registration.
      *
      * @param processAnnotatedType annotated type processing event.
      */
+    // Mark: All I need to do here is look up what the aggregate classes are
+    // and what the value of the @Aggregate annotation is. This feels a little
+    // overkill. That said, currently I do need these values in afterBeanDiscovery
+    // and this might be the most efficient way of collecting these anyway.
+    // Other than being a bit ugly, this is not anything that is causing any
+    // functional issues.
     <T> void processAggregate(@Observes @WithAnnotations({Aggregate.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
+        // TODO Aggregate classes may need to be vetoed so that CDI does not
+        // actually try to manage them.
+        
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
         logger.debug("Found aggregate: {}.", clazz);
@@ -129,6 +135,9 @@ public class AxonCdiExtension implements Extension {
         aggregates.add(new AggregateDefinition(clazz));
     }
 
+    // Mark: Same issues with the stuff below. A bit ugly but functional. I may
+    // be able to get rid of most fo this by doing BeanManager look ups right 
+    // after afterBeanDiscovery or later.
     <T> void processAggregateRepositoryProducer(
             @Observes final ProcessProducer<T, Repository> processProducer) {
         logger.debug("Found producer for repository: {}.", processProducer.getProducer());
@@ -159,6 +168,9 @@ public class AxonCdiExtension implements Extension {
 
     <T> void processSaga(@Observes @WithAnnotations({Saga.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
+        // TODO Saga classes may need to be vetoed so that CDI does not
+        // actually try to manage them.        
+        
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
         logger.debug("Found saga: {}.", clazz);
@@ -166,19 +178,15 @@ public class AxonCdiExtension implements Extension {
         sagas.add(new SagaDefinition(clazz));
     }
 
-    // Antoine: While processing the producers, I can detect configuration
-    // errors from an Axon standpoint. These errors should result in the
-    // deployment failing. Should I wait to throw these validation errors until
-    // later or should I do it right now during annotation scanning? Is there a
-    // specific type of exception that's better to throw or will any runtime
-    // exception do?
-    // to stick to CDI spirit you should fail ASAP. The best way to do that is by using
-    // addDefinitionError() that is available in all lifecycle event (i.e. processProducer.addDefinitionError())
     /**
      * Scans for an event storage engine producer.
      *
      * @param processProducer process producer event.
      */
+    // Mark: I know these seem especially frivolous and looks like they may be
+    // replaced with post deployment look-ups or injection of some kind.
+    // Unfortunately I don't think it is that straightforwards for reasons 
+    // explained a bit later. That said, I do want to discuss these with you.
     <T> void processEventStorageEngineProducer(
             @Observes final ProcessProducer<T, EventStorageEngine> processProducer) {
         // TODO Handle multiple producer definitions.
@@ -299,15 +307,15 @@ public class AxonCdiExtension implements Extension {
         this.commandBusProducer = processProducer.getProducer();
     }
 
-    <T> void processCommandGatewayProducer(
-            @Observes final ProcessProducer<T, CommandGateway> processProducer) {
-        // TODO Handle multiple producer definitions.
-
-        logger.debug("Producer for command gateway found: {}.",
-                processProducer.getProducer());
-
-        this.commandGatewayProducer = processProducer.getProducer();
-    }
+//    <T> void processCommandGatewayProducer(
+//            @Observes final ProcessProducer<T, CommandGateway> processProducer) {
+//        // TODO Handle multiple producer definitions.
+//
+//        logger.debug("Producer for command gateway found: {}.",
+//                processProducer.getProducer());
+//
+//        this.commandGatewayProducer = processProducer.getProducer();
+//    }
 
     /**
      * Scans for an entity manager provider producer.
@@ -461,6 +469,10 @@ public class AxonCdiExtension implements Extension {
      *
      * @param processBean bean processing event.
      */
+    // Mark: This one is especally tricky. I am looking for the existance
+    // of annotations and methods and collecting bean definitions.
+    // I suspect this is the most efficient way to do this and I can use 
+    // the bean defenitions to look up via BeanManager later.
     <T> void processBean(@Observes final ProcessBean<T> processBean) {
         MessageHandlingBeanDefinition.inspect(processBean.getBean())
                 .ifPresent(bean -> {
@@ -479,6 +491,21 @@ public class AxonCdiExtension implements Extension {
         Configurer configurer;
 
         if (this.configurerProducer != null) {
+            // Mark: this is one of the biggest headaches I am facing. What I 
+            // need is the actual bean instance that I need to move forward with.
+            // Right now what I am doing is just having the producer create it.
+            // The problem with this is that CDI and the Java EE runtime is just
+            // not fullly ready to do that at this stage. In addition, the 
+            // bean may be referencing definitions I have not had a chance
+            // to register with CDI yet since they can only be produced after the 
+            // Axon configuration is done.
+            // 
+            // The only solution I can think of is register any bean 
+            // definitions I've detected I absolutely need and avoid actual
+            // bean reference until later, create the beans like configurer
+            // that I say in the API cannot have circular dependencies and move the 
+            // configuration steps itself to be as lazily loaded as possible.
+            // Can you think of a better strategy to deal with this problem?
             configurer = produce(beanManager, configurerProducer);
             logger.info("Starting with an application provided configurer: {}.",
                     configurer.getClass().getSimpleName());
@@ -708,8 +735,37 @@ public class AxonCdiExtension implements Extension {
 
         logger.info("Registering Axon APIs with CDI.");
 
+        
+        // Mark: This is one of the key parts that is forcing me to do anything at all
+        // in the afterBeanDiscovery phase. Once the Axon configuration completes,
+        // including taking into account user defined overrides, I need to bind some
+        // bean definitions with CDI. Aside from these relatively static definitions,
+        // there are and will be loops where I need to register things that look like
+        // Repository<AggregateType1>...Repository<AggregateTypeN>. I think this means
+        // I absolutely need to make sure of and thus finish my Axon configuration somehow very
+        // close to afterBeanDiscovery, in a programmatic fashion.
+        //
+        // That said, you'll notice the lambdas below that are my effort to defer
+        // actual instantiation to as late as possible. The only other way I can 
+        // think of to defer actual bean referencing any further is by using
+        // byte code proxies that look up bean references on each method call.
+        // Can you think of a better way to further defer the actual configution start and
+        // bean referencing?
+        // 
+        // Even with this deferring, I am running into issues like EJBs not
+        // instantiated and JPA registries not done yet on certain containers like
+        // Payara. When I refer to application scoped beans at this stage, it seems I am gettting
+        // my own copy and then the application creates another copy when the
+        // application code actually bootstraps. All related to referncing beans too
+        // early I believe.
+        
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> startConfiguration(configurer)));
+        // Mark: I tried removing some of this code in favor of globally enabled alternatives.
+        // These are in AxonDefaultConfiguration. Howver, I immidiately ran into
+        // circular reference issues. I do not think alternatives are really
+        // a viable solution for this use case and I need to keep sticking to something
+        // similar to this unless you know of a way.
         addIfNotConfigured(CommandBus.class, commandBusProducer,
                 () -> CdiUtilities.getReference(beanManager, Configuration.class).commandBus(),
                 afterBeanDiscovery);
@@ -884,11 +940,6 @@ public class AxonCdiExtension implements Extension {
     }
 
     private <T> T produce(BeanManager beanManager, Producer<T> producer) {
-        // Antoine: Is createCreationalContext(null) is correct here?
-        // If not, what should I do instead? Again, many of these things
-        // may be indirectly referencing container resources.
-
-        // Yes it's correct, but I don't think you need to produce your instances by hand
         return producer.produce(beanManager.createCreationalContext(null));
     }
 }

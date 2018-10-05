@@ -19,8 +19,6 @@ import org.axonframework.config.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// Antoine: Is there a better way to do this while still sticking to CDI 1.1/
-// Java EE 7?
 public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
     private static final Logger logger = LoggerFactory.getLogger(
@@ -46,7 +44,7 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    // Antoine: Is this correct? Should I be doing something additional?
+    // Mark: Is this correct? Should I be doing something additional?
     public void destroy(T instance, final CreationalContext<T> context) {
         if (clazz.equals(Configuration.class)) {
             logger.info("Shutting down Axon configuration.");
@@ -77,8 +75,6 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
 
     @Override
     public Class<? extends Annotation> getScope() {
-        // TODO Verify that application scope is appropriate for all cases.
-        // It likely is.
         return ApplicationScoped.class;
     }
 
@@ -118,7 +114,7 @@ public class BeanWrapper<T> implements Bean<T>, PassivationCapable {
     }
 
     @Override
-    // Antoine: Is this sufficiently unique? Will this wrapper actually ever
+    // Mark: Is this sufficiently unique? Will this wrapper actually ever
     // get serialized? Is this supposed to be the ID of the underlying
     // bean instance or just this bean definition?
     public String getId() {
