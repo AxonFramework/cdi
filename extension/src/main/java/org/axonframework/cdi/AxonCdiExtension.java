@@ -111,6 +111,9 @@ public class AxonCdiExtension implements Extension {
     // timing issues. Right now things are processed as they make
     // "semantic" sense. Do you think this could be improved to do the same
     // processing later?
+    //X @struberg: it will work. But probably might be better to observe ProcessBeanAttributes pba and use pba.getAnnotated
+    //X that way you will also have the ability to pick up modifications of those classes via ProcessAnnotatedType.
+    //X Not sure if this is really needed for your users though.
     /**
      * Scans all annotated types with the {@link Aggregate} annotation and
      * collects them for registration.
@@ -473,8 +476,10 @@ public class AxonCdiExtension implements Extension {
     // of annotations and methods and collecting bean definitions.
     // I suspect this is the most efficient way to do this and I can use 
     // the bean defenitions to look up via BeanManager later.
+    //X @struberg it's fine. Although I would use processBean.getAnnotated() instead of bean.getBeanClass() in the 'inspect' code
+    //X I'fe quickly fixed this method. Please verify if it works as expected. And you still need to change the tests to AnnotatedType!
     <T> void processBean(@Observes final ProcessBean<T> processBean) {
-        MessageHandlingBeanDefinition.inspect(processBean.getBean())
+        MessageHandlingBeanDefinition.inspect(processBean.getBean(), processBean.getAnnotated())
                 .ifPresent(bean -> {
                     logger.debug("Found {}.", bean);
                     messageHandlers.add(bean);
@@ -495,7 +500,12 @@ public class AxonCdiExtension implements Extension {
             // need is the actual bean instance that I need to move forward with.
             // Right now what I am doing is just having the producer create it.
             // The problem with this is that CDI and the Java EE runtime is just
-            // not fullly ready to do that at this stage. In addition, the 
+            // not fullly ready to do that at this stage.
+
+            //X @struberg: don't understand why exactly. Miss the context.
+            //X I fear I'd need a way better understanding of Axon
+
+            // In addition, the
             // bean may be referencing definitions I have not had a chance
             // to register with CDI yet since they can only be produced after the 
             // Axon configuration is done.
@@ -744,6 +754,14 @@ public class AxonCdiExtension implements Extension {
         // Repository<AggregateType1>...Repository<AggregateTypeN>. I think this means
         // I absolutely need to make sure of and thus finish my Axon configuration somehow very
         // close to afterBeanDiscovery, in a programmatic fashion.
+
+        //X @struberg: do you know that you can send CDI events between CDI Extensions already during bootstrap?
+        //X That might help here.
+        //X So you effectively can send out a ConfigurationEvent and anybody could write an own CDI Extension where
+        //X this gets observed. That way you can effectively have configuration and inter-CDI communication already before
+        //X the CDI container is booted.
+        //X I think I need a better explanation what problem you want to solve by it though.
+
         //
         // That said, you'll notice the lambdas below that are my effort to defer
         // actual instantiation to as late as possible. The only other way I can 
