@@ -10,14 +10,14 @@ import javax.enterprise.inject.spi.Bean;
 /**
  * @author Milan Savic
  */
-class MessageHandlingBeanDefinition {
+public class MessageHandlingBeanDefinition {
 
     private final Bean<?> bean;
     private final boolean eventHandler;
     private final boolean queryHandler;
     private final boolean commandHandler;
 
-    MessageHandlingBeanDefinition(Bean<?> bean, boolean eventHandler,
+    public MessageHandlingBeanDefinition(Bean<?> bean, boolean eventHandler,
             boolean queryHandler, boolean commandHandler) {
         this.bean = bean;
         this.eventHandler = eventHandler;
@@ -25,7 +25,7 @@ class MessageHandlingBeanDefinition {
         this.commandHandler = commandHandler;
     }
 
-    static Optional<MessageHandlingBeanDefinition> inspect(Bean<?> bean) {
+    public static Optional<MessageHandlingBeanDefinition> inspect(Bean<?> bean) {
         boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
         boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
         boolean isCommandHandler = CdiUtilities.hasAnnotatedMethod(bean, CommandHandler.class);

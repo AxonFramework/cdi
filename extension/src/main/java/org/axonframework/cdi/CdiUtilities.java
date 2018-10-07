@@ -81,7 +81,7 @@ public class CdiUtilities {
         return CDI.current().getBeanManager();
     }
 
-    static String extractBeanName(AnnotatedMember<?> annotatedMember) {
+    public static String extractBeanName(AnnotatedMember<?> annotatedMember) {
         Named named = annotatedMember.getAnnotation(Named.class);
 
         if (named != null && !"".equals(named.value())) {

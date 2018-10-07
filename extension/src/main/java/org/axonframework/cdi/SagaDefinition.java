@@ -7,31 +7,31 @@ import java.util.Optional;
 /**
  * @author Milan Savic
  */
-class SagaDefinition {
+public class SagaDefinition {
 
     private final Class<?> sagaType;
 
-    SagaDefinition(Class<?> sagaType) {
+    public SagaDefinition(Class<?> sagaType) {
         this.sagaType = sagaType;
     }
 
-    Class<?> sagaType() {
+    public Class<?> sagaType() {
         return sagaType;
     }
 
-    Optional<String> sagaStore() {
+    public Optional<String> sagaStore() {
         return StringUtilities.createOptional(getSagaAnnotation().sagaStore());
     }
 
-    Optional<String> configurationBean() {
+    public Optional<String> configurationBean() {
         return StringUtilities.createOptional(getSagaAnnotation().configurationBean());
     }
 
-    boolean explicitConfiguration() {
+    public boolean explicitConfiguration() {
         return configurationBean().isPresent();
     }
 
-    String configurationName() {
+    public String configurationName() {
         return configurationBean().orElse(StringUtilities.lowerCaseFirstLetter(
                 sagaType().getSimpleName()) + "Configuration");
     }

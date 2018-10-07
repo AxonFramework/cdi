@@ -8,12 +8,12 @@ import java.util.function.Supplier;
 /**
  * @author Milan Savic
  */
-class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
+public class LazyRetrievedModuleConfiguration implements ModuleConfiguration {
 
     private final Supplier<ModuleConfiguration> delegateSupplier;
     private ModuleConfiguration delegate;
 
-    LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
+    public LazyRetrievedModuleConfiguration(Supplier<ModuleConfiguration> delegateSupplier) {
         this.delegateSupplier = delegateSupplier;
     }
 
