@@ -145,6 +145,25 @@ public class AxonCdiExtension implements Extension {
      */
 
     /**
+     * Scans all Injectable beans. Interestingly, this is fired before the ProcessBean&lt;&gt; event, so we need
+     * to determine if we're interested, before it has been declared a "Bean"..
+     */
+    public <T> void processInjectionTarget(@Observes final ProcessInjectionTarget<T> pit)
+    {
+        final Class<T> clazz = pit.getAnnotatedType().getJavaClass();
+
+        if (MessageHandlingBeanDefinition.isMessageHandler(clazz)) {
+            logger.info("ProcessInjectionTarget<{}>: Found a messageHandler.", clazz.getName());
+            beans.addMessageHandlerClass(clazz);
+            pit.setInjectionTarget(new BeanLifecycleInterceptor<>(pit.getInjectionTarget()));
+        }
+
+        if (clazz.getName().startsWith("io.axoniq.")) {
+            logger.debug("ProcessInjectionTarget<{}>", clazz.getName());
+        }
+    }
+
+    /**
      * Scans all beans and collects beans with message handlers.
      *
      * @param processBean bean processing event.
@@ -155,25 +174,10 @@ public class AxonCdiExtension implements Extension {
     // the bean defenitions to look up via BeanManager later.
     public <T> void processBean(@Observes final ProcessBean<T> processBean) {
         final Class<?> clazz = processBean.getBean().getBeanClass();
-        if (clazz.getName().startsWith("io.axoniq.") || clazz.getName().startsWith("org.axonframework.")) {
-            logger.info("ProcessInjectionTarget<{}>", clazz.getName());
-        }
-        MessageHandlingBeanDefinition.inspect(processBean.getBean())
-                .ifPresent(bean -> {
-                    logger.info("Found {}.", bean);
-                    beans.addMessageHandler(bean.getBean().getBeanClass(), bean);
-                });
-    }
 
-    public <T> void processInjectionTarget(@Observes final ProcessInjectionTarget<T> injectionTarget)
-            throws IOException
-    {
-        final Class<T> clazz = injectionTarget.getAnnotatedType().getJavaClass();
-//        if (clazz.getName().startsWith("io.axoniq.") || clazz.getName().startsWith("org.axonframework.")) {
-            logger.info("ProcessInjectionTarget<{}>", clazz.getName());
-//        }
         if (beans.isMessageHandler(clazz)) {
-            logger.info("ProcessInjectionTarget<{}>: Found a MessageHandler", clazz.getName());
+            logger.info("ProcessBean<{}>: Found {}.", clazz.getName(), processBean);
+            beans.addMessageHandler(new MessageHandlingBeanDefinition(processBean.getBean()));
         }
     }
 

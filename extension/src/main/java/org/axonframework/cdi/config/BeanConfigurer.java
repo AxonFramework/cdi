@@ -9,27 +9,31 @@ import org.slf4j.LoggerFactory;
 
 import javax.enterprise.inject.spi.BeanManager;
 import java.lang.invoke.MethodHandles;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class BeanConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
 
-    private final Map<Class<?>, MessageHandlingBeanDefinition> messageHandlers = new HashMap<>();
+    private final Set<Class<?>> handlerClasses = new HashSet<>();
+    private final List<MessageHandlingBeanDefinition> messageHandlers = new ArrayList<>();
 
-    public void addMessageHandler(Class<?> beanClass, MessageHandlingBeanDefinition bean) {
-        messageHandlers.put(beanClass, bean);
+    public void addMessageHandlerClass(Class<?> beanClass) {
+        handlerClasses.add(beanClass);
+    }
+
+    public void addMessageHandler(MessageHandlingBeanDefinition bean) {
+        messageHandlers.add(bean);
     }
 
     public <T> boolean isMessageHandler(Class<T> clazz) {
-        return messageHandlers.containsKey(clazz);
+        return handlerClasses.contains(clazz);
     }
 
     public void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
                                          EventHandlingConfiguration eventHandlingConfiguration) {
-        for (MessageHandlingBeanDefinition messageHandler : messageHandlers.values()) {
+        for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
             Component<Object> component = new Component<>(() -> null, "messageHandler",
                     c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
 

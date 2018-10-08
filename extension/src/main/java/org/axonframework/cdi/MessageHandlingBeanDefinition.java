@@ -2,8 +2,12 @@ package org.axonframework.cdi;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.queryhandling.QueryHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 import javax.enterprise.inject.spi.Bean;
 
@@ -12,10 +16,20 @@ import javax.enterprise.inject.spi.Bean;
  */
 public class MessageHandlingBeanDefinition {
 
+    private static final Logger logger = LoggerFactory.getLogger(
+            MethodHandles.lookup().lookupClass());
+
     private final Bean<?> bean;
     private final boolean eventHandler;
     private final boolean queryHandler;
     private final boolean commandHandler;
+
+    public MessageHandlingBeanDefinition(Bean<?> bean) {
+        this.bean = bean;
+        this.eventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
+        this.queryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
+        this.commandHandler = CdiUtilities.hasAnnotatedMethod(bean, CommandHandler.class);
+    }
 
     public MessageHandlingBeanDefinition(Bean<?> bean, boolean eventHandler,
             boolean queryHandler, boolean commandHandler) {
@@ -35,7 +49,16 @@ public class MessageHandlingBeanDefinition {
                     isEventHandler, isQueryHandler, isCommandHandler));
         }
 
+        final String className = bean.getBeanClass().getName();
+        if (className.startsWith("io.axoniq")) {
+            logger.debug("inspect(): {} has no relevant annotations.", className);
+        }
         return Optional.empty();
+    }
+
+    public static boolean isMessageHandler(Class<?> clazz) {
+        return CdiUtilities.hasAnnotatedMethod(clazz,
+                EventHandler.class, EventSourcingHandler.class, QueryHandler.class, CommandHandler.class);
     }
 
     public Bean<?> getBean() {

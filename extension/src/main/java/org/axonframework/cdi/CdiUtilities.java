@@ -5,6 +5,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import static java.util.Arrays.stream;
+
+import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -52,6 +54,23 @@ public class CdiUtilities {
             final Class<? extends Annotation> clazz) {
         return getDeclaredMethodsTransitive(bean.getBeanClass()).anyMatch(
                 m -> m.isAnnotationPresent(clazz));
+    }
+
+    private static final boolean hasOneOfTheseAnnotations(final Method m, final Class<? extends Annotation>... classes) {
+        return Arrays.stream(classes).anyMatch(c -> m.isAnnotationPresent(c));
+    }
+
+    /**
+     * Checks whether a given bean has methods annotated with given annotation.
+     *
+     * @param beanClass Class of the bean to check.
+     * @param classes annotation class.
+     * @return true if at least one annotated method is present.
+     */
+    public static final boolean hasAnnotatedMethod(final Class<?> beanClass,
+                                                   final Class<? extends Annotation>... classes) {
+        return getDeclaredMethodsTransitive(beanClass).anyMatch(
+                m -> hasOneOfTheseAnnotations(m, classes));
     }
 
     /**
