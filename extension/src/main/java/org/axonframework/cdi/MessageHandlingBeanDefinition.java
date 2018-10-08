@@ -5,6 +5,9 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 
 import java.util.Optional;
+
+import javax.enterprise.inject.spi.Annotated;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 
 /**
@@ -25,10 +28,14 @@ class MessageHandlingBeanDefinition {
         this.commandHandler = commandHandler;
     }
 
-    static Optional<MessageHandlingBeanDefinition> inspect(Bean<?> bean) {
-        boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(bean, EventHandler.class);
-        boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(bean, QueryHandler.class);
-        boolean isCommandHandler = CdiUtilities.hasAnnotatedMethod(bean, CommandHandler.class);
+    static Optional<MessageHandlingBeanDefinition> inspect(Bean<?> bean, Annotated annotated) {
+        if (!(annotated instanceof AnnotatedType)) {
+            return Optional.empty();
+        }
+        AnnotatedType at = (AnnotatedType) annotated;
+        boolean isEventHandler = CdiUtilities.hasAnnotatedMethod(at, EventHandler.class);
+        boolean isQueryHandler = CdiUtilities.hasAnnotatedMethod(at, QueryHandler.class);
+        boolean isCommandHandler = CdiUtilities.hasAnnotatedMethod(at, CommandHandler.class);
 
         if (isEventHandler || isQueryHandler || isCommandHandler) {
             return Optional.of(new MessageHandlingBeanDefinition(bean,

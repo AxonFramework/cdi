@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedMember;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
@@ -44,14 +45,13 @@ public class CdiUtilities {
     /**
      * Checks whether a given bean has methods annotated with given annotation.
      *
-     * @param bean bean to check.
-     * @param clazz annotation class.
+     * @param at AnnotatedType to check.
+     * @param annotationClazz annotation class.
      * @return true if at least one annotated method is present.
      */
-    public static final boolean hasAnnotatedMethod(final Bean<?> bean,
-            final Class<? extends Annotation> clazz) {
-        return getDeclaredMethodsTransitive(bean.getBeanClass()).anyMatch(
-                m -> m.isAnnotationPresent(clazz));
+    public static final boolean hasAnnotatedMethod(final AnnotatedType<?> at,
+            final Class<? extends Annotation> annotationClazz) {
+        return at.getMethods().stream().anyMatch(m -> m.isAnnotationPresent(annotationClazz));
     }
 
     /**
