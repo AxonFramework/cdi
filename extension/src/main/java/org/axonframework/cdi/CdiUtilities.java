@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import static java.util.Arrays.stream;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -27,11 +28,25 @@ public class CdiUtilities {
      * @return Object reference.
      */
     @SuppressWarnings("unchecked")
-    public static <T> T getReference(final BeanManager beanManager,
-            final Bean<T> bean,
+    public static <T> T getReference(final BeanManager beanManager, final Bean<T> bean,
             final Type beanType) {
         return (T) beanManager.getReference(bean, beanType,
                 beanManager.createCreationalContext(bean));
+    }
+
+    public static Bean resolveBean(final BeanManager beanManager, final Class clazz) {
+        final Set<Bean<?>> beans = beanManager.getBeans(clazz);
+
+        if (!beans.isEmpty()) {
+            return beanManager.resolve(beans);
+        }
+
+        return null;
+    }
+
+    public static <T> T getReference(final BeanManager beanManager, final Bean<T> bean) {
+        final CreationalContext<?> creationalContext = beanManager.createCreationalContext(bean);
+        return (T) beanManager.getReference(bean, bean.getBeanClass(), creationalContext);
     }
 
     public static <T> T getReference(final BeanManager beanManager, final Class<T> clazz) {
