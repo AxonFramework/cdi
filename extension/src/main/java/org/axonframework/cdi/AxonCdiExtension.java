@@ -120,7 +120,8 @@ public class AxonCdiExtension implements Extension {
     <T> void processSaga(@Observes @WithAnnotations({Saga.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
         // TODO Saga classes may need to be vetoed so that CDI does not
-        // actually try to manage them.
+        // actually try to manage them. We should mirror what is actally done
+        // on the Spring side here.
 
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
@@ -249,6 +250,8 @@ public class AxonCdiExtension implements Extension {
             afterBeanDiscovery.addBean(new BeanWrapper<>(Serializer.class,
                     () -> CdiUtilities.getReference(beanManager, Configuration.class).serializer()));
         }
+
+        registerSagaConfiguration(afterBeanDiscovery);
     }
 
     private void detectOverrides(final BeanManager beanManager) {
@@ -269,6 +272,23 @@ public class AxonCdiExtension implements Extension {
                 messageSerializerBean = bean;
             }
         }
+    }
+
+    private void registerSagaConfiguration(AfterBeanDiscovery afterBeanDiscovery) {
+        sagas.forEach(sagaDefinition -> {
+            if (!sagaDefinition.explicitConfiguration()
+                    && !sagaConfigurationProducerMap.containsKey(
+                            sagaDefinition.configurationName())) {
+                SagaConfiguration<?> sagaConfiguration = SagaConfiguration
+                        .subscribingSagaManager(sagaDefinition.sagaType());
+
+                afterBeanDiscovery
+                        .addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
+                                SagaConfiguration.class,
+                                () -> sagaConfiguration));
+                sagaDefinition.setSagaConfiguration(sagaConfiguration);
+            }
+        });
     }
 
     void afterDeploymentValidation(
@@ -555,7 +575,7 @@ public class AxonCdiExtension implements Extension {
         registerAggregates(beanManager, configurer);
 
         registerSagaStore(beanManager, configurer);
-        registerSagas(beanManager, null, configurer);
+        registerSagas(beanManager, configurer);
 
         registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
 
@@ -655,6 +675,26 @@ public class AxonCdiExtension implements Extension {
 //                });
     }
 
+    @SuppressWarnings("unchecked")
+    private void registerSagas(BeanManager beanManager, Configurer configurer) {
+        sagas.forEach(sagaDefinition -> {
+            logger.info("Registering saga {}.", sagaDefinition.sagaType().getSimpleName());
+
+            // TODO Verify this is feature complete. What do we do in case of
+            // explicit configuration?
+            if (!sagaDefinition.explicitConfiguration()
+                    && beanManager.getBeans(
+                            sagaDefinition.configurationName()).isEmpty()) {
+                SagaConfiguration<?> sagaConfiguration = sagaDefinition.getSagaConfiguration();
+                sagaDefinition.sagaStore()
+                        .ifPresent(sagaStore -> sagaConfiguration
+                        .configureSagaStore(c -> CdiUtilities.getReference(
+                        beanManager, sagaStore)));
+                configurer.registerModule(sagaConfiguration);
+            }
+        });
+    }
+
     private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
             EventHandlingConfiguration eventHandlingConfiguration) {
         for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
@@ -679,29 +719,6 @@ public class AxonCdiExtension implements Extension {
                 configurer.registerQueryHandler(c -> component.get());
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void registerSagas(BeanManager beanManager, AfterBeanDiscovery afterBeanDiscovery, Configurer configurer) {
-        sagas.forEach(sagaDefinition -> {
-            logger.info("Registering saga {}.", sagaDefinition.sagaType().getSimpleName());
-
-            if (!sagaDefinition.explicitConfiguration()
-                    && !sagaConfigurationProducerMap.containsKey(sagaDefinition.configurationName())) {
-
-                SagaConfiguration<?> sagaConfiguration = SagaConfiguration
-                        .subscribingSagaManager(sagaDefinition.sagaType());
-
-                afterBeanDiscovery
-                        .addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
-                                SagaConfiguration.class,
-                                () -> sagaConfiguration));
-                sagaDefinition.sagaStore()
-                        .ifPresent(sagaStore -> sagaConfiguration
-                        .configureSagaStore(c -> produce(beanManager, sagaStoreProducerMap.get(sagaStore))));
-                configurer.registerModule(sagaConfiguration);
-            }
-        });
     }
 
     private <T> T produce(BeanManager beanManager, Producer<T> producer) {

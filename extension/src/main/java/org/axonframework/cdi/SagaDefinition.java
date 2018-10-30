@@ -3,6 +3,7 @@ package org.axonframework.cdi;
 import org.axonframework.cdi.stereotype.Saga;
 
 import java.util.Optional;
+import org.axonframework.config.SagaConfiguration;
 
 /**
  * @author Milan Savic
@@ -10,6 +11,7 @@ import java.util.Optional;
 class SagaDefinition {
 
     private final Class<?> sagaType;
+    private SagaConfiguration<?> sagaConfiguration;
 
     SagaDefinition(Class<?> sagaType) {
         this.sagaType = sagaType;
@@ -34,6 +36,14 @@ class SagaDefinition {
     String configurationName() {
         return configurationBean().orElse(StringUtilities.lowerCaseFirstLetter(
                 sagaType().getSimpleName()) + "Configuration");
+    }
+
+    void setSagaConfiguration(SagaConfiguration<?> sagaConfiguration) {
+        this.sagaConfiguration = sagaConfiguration;
+    }
+
+    SagaConfiguration<?> getSagaConfiguration() {
+        return sagaConfiguration;
     }
 
     private Saga getSagaAnnotation() {
