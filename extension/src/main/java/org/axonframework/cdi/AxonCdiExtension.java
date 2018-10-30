@@ -23,9 +23,7 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import org.axonframework.cdi.stereotype.Aggregate;
 import org.axonframework.cdi.stereotype.Saga;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
-import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
@@ -46,7 +44,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.queryhandling.QueryBus;
@@ -76,9 +73,6 @@ public class AxonCdiExtension implements Extension {
     private Bean messageSerializerBean;
 
     private final List<AggregateDefinition> aggregates = new ArrayList<>();
-    private final Map<String, Producer<Repository>> aggregateRepositoryProducerMap = new HashMap<>();
-    private final Map<String, Producer<SnapshotTriggerDefinition>> snapshotTriggerDefinitionProducerMap = new HashMap<>();
-    private final Map<String, Producer<CommandTargetResolver>> commandTargetResolverProducerMap = new HashMap<>();
 
     private final List<SagaDefinition> sagas = new ArrayList<>();
     private final Map<String, Producer<SagaStore>> sagaStoreProducerMap = new HashMap<>();
@@ -110,7 +104,8 @@ public class AxonCdiExtension implements Extension {
     <T> void processAggregate(@Observes @WithAnnotations({Aggregate.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
         // TODO Aggregate classes may need to be vetoed so that CDI does not
-        // actually try to manage them.
+        // actually try to manage them. We should mirror what is actally done
+        // on the Spring side here.
 
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
@@ -122,34 +117,6 @@ public class AxonCdiExtension implements Extension {
     // Mark: Same issues with the stuff below. A bit ugly but functional. I may
     // be able to get rid of most fo this by doing BeanManager look ups right
     // after afterBeanDiscovery or later.
-    <T> void processAggregateRepositoryProducer(
-            @Observes final ProcessProducer<T, Repository> processProducer) {
-        logger.debug("Found producer for repository: {}.", processProducer.getProducer());
-
-        String repositoryName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
-
-        this.aggregateRepositoryProducerMap.put(repositoryName, processProducer.getProducer());
-    }
-
-    <T> void processSnapshotTriggerDefinitionProducer(
-            @Observes final ProcessProducer<T, SnapshotTriggerDefinition> processProducer) {
-        logger.debug("Found producer for snapshot trigger definition: {}.",
-                processProducer.getProducer());
-
-        String triggerDefinitionName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
-
-        this.snapshotTriggerDefinitionProducerMap.put(triggerDefinitionName, processProducer.getProducer());
-    }
-
-    <T> void processCommandTargetResolverProducer(
-            @Observes final ProcessProducer<T, CommandTargetResolver> processProducer) {
-        logger.debug("Found producer for command target resolver: {}.", processProducer.getProducer());
-
-        String resolverName = CdiUtilities.extractBeanName(processProducer.getAnnotatedMember());
-
-        this.commandTargetResolverProducerMap.put(resolverName, processProducer.getProducer());
-    }
-
     <T> void processSaga(@Observes @WithAnnotations({Saga.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
         // TODO Saga classes may need to be vetoed so that CDI does not
@@ -602,27 +569,32 @@ public class AxonCdiExtension implements Extension {
     @SuppressWarnings("unchecked")
     private void registerAggregates(BeanManager beanManager, Configurer configurer) {
         aggregates.forEach(aggregateDefinition -> {
-            logger.info("Registering aggregate: {}.", aggregateDefinition.aggregateType().getSimpleName());
+            logger.info("Registering aggregate: {}.",
+                    aggregateDefinition.aggregateType().getSimpleName());
 
             AggregateConfigurer<?> aggregateConfigurer
                     = AggregateConfigurer.defaultConfiguration(aggregateDefinition.aggregateType());
 
             if (aggregateDefinition.repository().isPresent()) {
+                // TODO Handle the case that the required repository is not configured.
                 aggregateConfigurer.configureRepository(
-                        c -> produce(beanManager, aggregateRepositoryProducerMap
-                                .get(aggregateDefinition.repository().get())));
+                        c -> CdiUtilities.getReference(beanManager,
+                                aggregateDefinition.repository().get()));
             } else {
-                if (aggregateRepositoryProducerMap.containsKey(aggregateDefinition.repositoryName())) {
+                if (!beanManager.getBeans(
+                        aggregateDefinition.repositoryName()).isEmpty()) {
                     aggregateConfigurer.configureRepository(
-                            c -> produce(beanManager, aggregateRepositoryProducerMap
-                                    .get(aggregateDefinition.repositoryName())));
+                            c -> CdiUtilities.getReference(beanManager,
+                                    aggregateDefinition.repositoryName()));
                 } else {
                     // TODO: 8/29/2018 check how to do in CDI world: register repository as a bean
                     // TODO: 8/29/2018 check how to do in CDI world: aggregate factory
-                    aggregateDefinition.snapshotTriggerDefinition().ifPresent(triggerDefinition -> aggregateConfigurer
-                            .configureSnapshotTrigger(
-                                    c -> produce(beanManager, snapshotTriggerDefinitionProducerMap
-                                            .get(triggerDefinition))));
+                    // TODO Handle the case where the correct snapshot trigger is not defined.
+                    aggregateDefinition.snapshotTriggerDefinition().ifPresent(
+                            triggerDefinition -> aggregateConfigurer
+                                    .configureSnapshotTrigger(
+                                            c -> CdiUtilities.getReference(
+                                                    beanManager, triggerDefinition)));
 
                     if (aggregateDefinition.isJpaAggregate()) {
                         aggregateConfigurer.configureRepository(
@@ -642,20 +614,23 @@ public class AxonCdiExtension implements Extension {
             }
 
             if (aggregateDefinition.commandTargetResolver().isPresent()) {
+                // TODO Handle the case that an appropriate command target resolver
+                // has not been defined.
                 aggregateConfigurer.configureCommandTargetResolver(
-                        c -> produce(beanManager,
-                                commandTargetResolverProducerMap.get(aggregateDefinition.commandTargetResolver().get())));
+                        c -> CdiUtilities.getReference(beanManager,
+                                aggregateDefinition.commandTargetResolver().get()));
             } else {
-                commandTargetResolverProducerMap.keySet()
-                        .stream()
-                        .filter(resolver -> aggregates.stream()
-                        .filter(a -> a.commandTargetResolver().isPresent())
-                        .map(a -> a.commandTargetResolver().get())
-                        .noneMatch(resolver::equals))
-                        .findFirst() // TODO: 8/29/2018 what if there are more "default" resolvers
-                        .ifPresent(resolver -> aggregateConfigurer.configureCommandTargetResolver(
-                        c -> produce(beanManager,
-                                commandTargetResolverProducerMap.get(resolver))));
+                // TODO Better understand and reweite this code.
+//                commandTargetResolverProducerMap.keySet()
+//                        .stream()
+//                        .filter(resolver -> aggregates.stream()
+//                        .filter(a -> a.commandTargetResolver().isPresent())
+//                        .map(a -> a.commandTargetResolver().get())
+//                        .noneMatch(resolver::equals))
+//                        .findFirst() // TODO: 8/29/2018 what if there are more "default" resolvers
+//                        .ifPresent(resolver -> aggregateConfigurer.configureCommandTargetResolver(
+//                        c -> produce(beanManager,
+//                                commandTargetResolverProducerMap.get(resolver))));
             }
 
             configurer.configureAggregate(aggregateConfigurer);
