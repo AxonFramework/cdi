@@ -637,6 +637,24 @@ public class AxonCdiExtension implements Extension {
         });
     }
 
+    private void registerSagaStore(BeanManager beanManager, Configurer configurer) {
+        // TODO Properly understand and rewrite this code.
+//        sagaStoreProducerMap.keySet()
+//                .stream()
+//                .filter(storeName -> sagas.stream()
+//                .filter(sd -> sd.sagaStore().isPresent())
+//                .map(sd -> sd.sagaStore().get())
+//                .noneMatch(storeName::equals))
+//                .findFirst() // TODO: 8/29/2018 what if there are more "default" saga stores???
+//                .ifPresent(storeName -> {
+//                    SagaStore sagaStore = produce(beanManager, sagaStoreProducerMap.get(storeName));
+//                    logger.info("Registering saga store {}.", sagaStore.getClass().getSimpleName());
+//                    configurer
+//                            .registerComponent(SagaStore.class,
+//                                    c -> sagaStore);
+//                });
+    }
+
     private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
             EventHandlingConfiguration eventHandlingConfiguration) {
         for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
@@ -661,23 +679,6 @@ public class AxonCdiExtension implements Extension {
                 configurer.registerQueryHandler(c -> component.get());
             }
         }
-    }
-
-    private void registerSagaStore(BeanManager beanManager, Configurer configurer) {
-        sagaStoreProducerMap.keySet()
-                .stream()
-                .filter(storeName -> sagas.stream()
-                .filter(sd -> sd.sagaStore().isPresent())
-                .map(sd -> sd.sagaStore().get())
-                .noneMatch(storeName::equals))
-                .findFirst() // TODO: 8/29/2018 what if there are more "default" saga stores???
-                .ifPresent(storeName -> {
-                    SagaStore sagaStore = produce(beanManager, sagaStoreProducerMap.get(storeName));
-                    logger.info("Registering saga store {}.", sagaStore.getClass().getSimpleName());
-                    configurer
-                            .registerComponent(SagaStore.class,
-                                    c -> sagaStore);
-                });
     }
 
     @SuppressWarnings("unchecked")
