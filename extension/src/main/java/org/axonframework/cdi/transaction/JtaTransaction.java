@@ -1,36 +1,28 @@
 package org.axonframework.cdi.transaction;
 
-import java.lang.invoke.MethodHandles;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.TransactionSynchronizationRegistry;
-import javax.transaction.UserTransaction;
 import org.axonframework.common.transaction.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JtaTransaction implements Transaction {
+import javax.transaction.*;
+import java.lang.invoke.MethodHandles;
 
-    private static final String USER_TRANSACTION_LOCATION = "java:comp/UserTransaction";
-    private static final String JBOSS_USER_TRANSACTION_LOCATION
-            = "java:jboss/UserTransaction";
-    private static final String TRANSACTION_SYNCHRONIZATION_REGISTRY_LOCATION
-            = "java:comp/TransactionSynchronizationRegistry";
+/**
+ *
+ */
+public class JtaTransaction implements Transaction {
 
     private static final Logger logger = LoggerFactory.getLogger(
             MethodHandles.lookup().lookupClass());
 
-    private UserTransaction userTransaction = null;
-    private TransactionSynchronizationRegistry registry;
+    private final UserTransaction userTransaction;
+    private final TransactionSynchronizationRegistry registry;
     private boolean owned = true;
 
-    public JtaTransaction() {
+    JtaTransaction(final UserTransaction userTransaction, final TransactionSynchronizationRegistry registry) {
+        this.userTransaction = userTransaction;
+        this.registry = registry;
+
         detectContext();
         attemptBegin();
     }
@@ -45,15 +37,16 @@ public class JtaTransaction implements Transaction {
         attemptRollback();
     }
 
+    /**
+     * Detect how we're going to do transactions and what the current transaction's status is.
+     */
     private void detectContext() {
-        userTransaction = getUserTransaction();
-
         if (userTransaction != null) {
             logger.debug("In a BMT compatible context, using UserTransaction.");
 
             try {
                 if (userTransaction.getStatus() != Status.STATUS_NO_TRANSACTION) {
-                    logger.debug("We cannot own the BMT transaction, the current transaction status is {}.",
+                    logger.warn("We cannot own the BMT transaction, the current transaction status is {}.",
                             statusToString(userTransaction.getStatus()));
                     owned = false;
                 }
@@ -61,14 +54,10 @@ public class JtaTransaction implements Transaction {
                 logger.warn("Had trouble trying to get BMT transaction status.", ex);
                 owned = false;
             }
+        } else if (registry != null) {
+            logger.debug("Most likely in a CMT compatible context, using TransactionSynchronizationRegistry.");
         } else {
-            registry = getTransactionSynchronizationRegistry();
-
-            if (registry != null) {
-                logger.debug("Most likely in a CMT compatible context, using TransactionSynchronizationRegistry.");
-            } else {
-                logger.warn("No JTA APIs available in this context. No transation managment can be performed.");
-            }
+            logger.warn("No JTA APIs available in this context. No transation managment can be performed.");
         }
     }
 
@@ -81,18 +70,16 @@ public class JtaTransaction implements Transaction {
                     logger.debug("Beginning BMT transaction.");
                     userTransaction.begin();
                 } else {
-                    logger.debug("Did not try to begin non-owned BMT transaction.");
+                    logger.warn("Did not try to begin non-owned BMT transaction.");
                 }
             } catch (SystemException | NotSupportedException ex) {
                 logger.warn("Had trouble trying to start BMT transaction.", ex);
             }
+        } else if (registry != null) {
+            logger.error("Not allowed to begin CMT transaction, the current transaction status is {}.",
+                    statusToString(registry.getTransactionStatus()));
         } else {
-            if (registry != null) {
-                logger.debug("Not allowed to begin CMT transaction, the current transaction status is {}.",
-                        statusToString(registry.getTransactionStatus()));
-            } else {
-                logger.warn("No JTA APIs available in this context. No begin done.");
-            }
+            logger.warn("No JTA APIs available in this context. No begin done.");
         }
     }
 
@@ -110,20 +97,18 @@ public class JtaTransaction implements Transaction {
                                 statusToString(userTransaction.getStatus()));
                     }
                 } else {
-                    logger.debug("Cannot commit non-owned BMT transaction.");
+                    logger.error("Cannot commit non-owned BMT transaction.");
                 }
             } catch (SystemException | RollbackException
                     | HeuristicMixedException | HeuristicRollbackException
                     | SecurityException | IllegalStateException ex) {
                 logger.warn("Had trouble trying to commit BMT transaction.", ex);
             }
+        } else if (registry != null) {
+            logger.error("Not allowed to commit CMT transaction, the current transaction status is {}.",
+                    statusToString(registry.getTransactionStatus()));
         } else {
-            if (registry != null) {
-                logger.debug("Not allowed to commit CMT transaction, the current transaction status is {}.",
-                        statusToString(registry.getTransactionStatus()));
-            } else {
-                logger.warn("No JTA APIs available in this context. No commit done.");
-            }
+            logger.warn("No JTA APIs available in this context. No commit done.");
         }
     }
 
@@ -147,50 +132,17 @@ public class JtaTransaction implements Transaction {
             } catch (SystemException | SecurityException | IllegalStateException ex) {
                 logger.warn("Had trouble trying to roll back BMT transaction.", ex);
             }
-        } else {
-            if (registry != null) {
-                if (registry.getTransactionStatus() == Status.STATUS_ACTIVE) {
-                    logger.debug("Setting CMT transaction to roll back.");
-                    registry.setRollbackOnly();
-                } else {
-                    logger.warn("Cannot roll back CMT transaction, current transaction status is {}.",
-                            statusToString(registry.getTransactionStatus()));
-                }
+        } else if (registry != null) {
+            if (registry.getTransactionStatus() == Status.STATUS_ACTIVE) {
+                logger.warn("Setting CMT transaction to roll back.");
+                registry.setRollbackOnly();
             } else {
-                logger.warn("No JTA APIs available in this context. No rollback performed.");
+                logger.warn("Cannot roll back CMT transaction, current transaction status is {}.",
+                        statusToString(registry.getTransactionStatus()));
             }
+        } else {
+            logger.warn("No JTA APIs available in this context. No rollback performed.");
         }
-    }
-
-    private UserTransaction getUserTransaction() {
-        try {
-            logger.debug("Attempting to look up standard UserTransaction.");
-            return (UserTransaction) new InitialContext().lookup(
-                    USER_TRANSACTION_LOCATION);
-        } catch (NamingException ex) {
-            logger.debug("Could not look up standard UserTransaction.", ex);
-
-            try {
-                logger.debug("Attempting to look up JBoss proprietary UserTransaction.");
-                return (UserTransaction) new InitialContext().lookup(
-                        JBOSS_USER_TRANSACTION_LOCATION);
-            } catch (NamingException ex1) {
-                logger.debug("Could not look up JBoss proprietary UserTransaction.", ex1);
-            }
-        }
-
-        return null;
-    }
-
-    private TransactionSynchronizationRegistry getTransactionSynchronizationRegistry() {
-        try {
-            return (TransactionSynchronizationRegistry) new InitialContext().lookup(
-                    TRANSACTION_SYNCHRONIZATION_REGISTRY_LOCATION);
-        } catch (NamingException ex) {
-            logger.debug("Could not look up TransactionSynchronizationRegistry.", ex);
-        }
-
-        return null;
     }
 
     private String statusToString(int status) {
