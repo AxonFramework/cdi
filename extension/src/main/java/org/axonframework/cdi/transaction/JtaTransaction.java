@@ -52,9 +52,19 @@ public class JtaTransaction implements Transaction {
             logger.debug("In a BMT compatible context, using UserTransaction.");
 
             try {
-                if (userTransaction.getStatus() != Status.STATUS_NO_TRANSACTION) {
+                // RHBPMS-4621 - transaction can be markes as rollback
+                // and still be associated with current thread.
+                // See WFLY-4327
+                int status = userTransaction.getStatus();
+                if(status==Status.STATUS_ROLLEDBACK || status==Status.STATUS_MARKED_ROLLBACK)
+                {
+                    logger.error("Cleanup of transaction that has been rolled back previously.");
+                    userTransaction.rollback();
+                    status = userTransaction.getStatus();
+                }
+                if (status != Status.STATUS_NO_TRANSACTION) {
                     logger.debug("We cannot own the BMT transaction, the current transaction status is {}.",
-                            statusToString(userTransaction.getStatus()));
+                            statusToString(status));
                     owned = false;
                 }
             } catch (SystemException ex) {
