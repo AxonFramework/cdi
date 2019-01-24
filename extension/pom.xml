@@ -6,7 +6,7 @@
     <description>Provides official Axon support for the CDI programming model.</description>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-cdi</artifactId>
-    <version>3.3-alpha2</version>
+    <version>3.3-alpha3-SNAPSHOT</version>
     <inceptionYear>2018</inceptionYear>
     <url>https://github.com/AxonFramework/cdi</url>
 
@@ -193,7 +193,7 @@
         <connection>scm:git:git://github.com/AxonFramework/cdi.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/cdi.git</developerConnection>
         <url>https://github.com/AxonFramework/cdi</url>
-        <tag>axon-cdi-3.3-alpha2</tag>
+        <tag>HEAD</tag>
     </scm>
     
     <developers>
