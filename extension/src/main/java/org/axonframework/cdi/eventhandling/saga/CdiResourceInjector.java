@@ -1,6 +1,6 @@
 package org.axonframework.cdi.eventhandling.saga;
 
-import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.axonframework.modelling.saga.ResourceInjector;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedType;

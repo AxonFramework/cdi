@@ -1,13 +1,13 @@
 package org.axonframework.cdi.stereotype;
 
-import org.axonframework.commandhandling.model.AggregateRoot;
+import org.axonframework.modelling.command.AggregateRoot;
 
+import javax.enterprise.inject.Stereotype;
 import javax.inject.Named;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import javax.enterprise.inject.Stereotype;
 
 /**
  * Annotation that informs Axon that a given {@link Named} is an aggregate

@@ -1,58 +1,25 @@
 package org.axonframework.cdi;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Destroyed;
-import javax.enterprise.context.Initialized;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.AnnotatedMember;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeShutdown;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.ProcessAnnotatedType;
-import javax.enterprise.inject.spi.ProcessBean;
-import javax.enterprise.inject.spi.ProcessProducer;
-import javax.enterprise.inject.spi.Producer;
-import javax.enterprise.inject.spi.WithAnnotations;
-import javax.inject.Named;
 import org.axonframework.cdi.stereotype.Aggregate;
 import org.axonframework.cdi.stereotype.Saga;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.model.GenericJpaRepository;
-import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Component;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.*;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -60,6 +27,20 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Destroyed;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.*;
+import javax.inject.Named;
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Main CDI extension class responsible for collecting CDI beans and setting up
@@ -102,7 +83,7 @@ public class AxonCdiExtension implements Extension {
     private final List<Producer<ConfigurerModule>> configurerModuleProducers = new ArrayList<>();
     private final List<Producer<EventUpcaster>> eventUpcasterProducers = new ArrayList<>();
     private Producer<DeadlineManager> deadlineManagerProducer;
-    private Producer<EventHandlingConfiguration> eventHandlingConfigurationProducer;
+    private Producer<EventProcessingModule> eventProcessingModuleProducer;
     private Producer<EventProcessingConfiguration> eventProcessingConfigurationProducer;
 
     // Mark: Many of the beans and producers I am processing may use
@@ -425,13 +406,13 @@ public class AxonCdiExtension implements Extension {
     }
 
     <T> void processEventHandlingConfigurationProducer(
-            @Observes final ProcessProducer<T, EventHandlingConfiguration> processProducer) {
+            @Observes final ProcessProducer<T, EventProcessingModule> processProducer) {
         // TODO Handle multiple producer definitions.
 
         logger.debug("Producer for event handling configuration found: {}.",
                 processProducer.getProducer());
 
-        this.eventHandlingConfigurationProducer = processProducer.getProducer();
+        this.eventProcessingModuleProducer = processProducer.getProducer();
     }
 
     <T> void processEventProcessingConfigurationProducer(
@@ -607,26 +588,12 @@ public class AxonCdiExtension implements Extension {
             }));
         }
 
-        EventHandlingConfiguration eventHandlingConfiguration;
+        if (eventProcessingModuleProducer != null) {
+            EventProcessingModule mod = produce(beanManager, eventProcessingModuleProducer);
 
-        if (eventHandlingConfigurationProducer != null) {
-            eventHandlingConfiguration = produce(beanManager, eventHandlingConfigurationProducer);
-        } else {
-            eventHandlingConfiguration = new EventHandlingConfiguration();
-        }
+            logger.info("Registering event processing configuration: {}.", mod.getClass().getSimpleName());
 
-        logger.info("Registering event handling configuration: {}.",
-                eventHandlingConfiguration.getClass().getSimpleName());
-        configurer.registerModule(eventHandlingConfiguration);
-
-        if (eventProcessingConfigurationProducer != null) {
-            EventProcessingConfiguration eventProcessingConfiguration
-                    = produce(beanManager, eventProcessingConfigurationProducer);
-
-            logger.info("Registering event processing configuration: {}.",
-                    eventProcessingConfiguration.getClass().getSimpleName());
-
-            configurer.registerModule(eventProcessingConfiguration);
+            configurer.registerModule(mod);
         }
 
         configurerModuleProducers.forEach(producer -> {
@@ -739,7 +706,7 @@ public class AxonCdiExtension implements Extension {
         registerAggregates(beanManager, configurer);
         registerSagaStore(beanManager, configurer);
         registerSagas(beanManager, afterBeanDiscovery, configurer);
-        registerMessageHandlers(beanManager, configurer, eventHandlingConfiguration);
+        registerMessageHandlers(beanManager, configurer);
 
         logger.info("Axon Framework configuration complete.");
 
@@ -827,8 +794,7 @@ public class AxonCdiExtension implements Extension {
         return configurer.start();
     }
 
-    private void registerMessageHandlers(BeanManager beanManager, Configurer configurer,
-            EventHandlingConfiguration eventHandlingConfiguration) {
+    private void registerMessageHandlers(BeanManager beanManager, Configurer configurer) {
         for (MessageHandlingBeanDefinition messageHandler : messageHandlers) {
             Component<Object> component = new Component<>(() -> null, "messageHandler",
                     c -> messageHandler.getBean().create(beanManager.createCreationalContext(null)));
@@ -836,7 +802,7 @@ public class AxonCdiExtension implements Extension {
             if (messageHandler.isEventHandler()) {
                 logger.info("Registering event handler: {}.",
                         messageHandler.getBean().getBeanClass().getSimpleName());
-                eventHandlingConfiguration.registerEventHandler(c -> component.get());
+                configurer.eventProcessing(c -> c.registerEventHandler( conf ->component.get()));
             }
 
             if (messageHandler.isCommandHandler()) {
@@ -879,15 +845,15 @@ public class AxonCdiExtension implements Extension {
                                             .get(triggerDefinition))));
                     if (aggregateDefinition.isJpaAggregate()) {
                         aggregateConfigurer.configureRepository(
-                                c -> new GenericJpaRepository(
+                                c -> (Repository)GenericJpaRepository.builder(aggregateDefinition.aggregateType())
                                         // TODO: 8/29/2018 what to do about default EntityManagerProvider (check spring impl)
-                                        c.getComponent(EntityManagerProvider.class),
-                                        aggregateDefinition.aggregateType(),
-                                        c.eventBus(),
-                                        c::repository,
-                                        c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE),
-                                        c.parameterResolverFactory(),
-                                        c.handlerDefinition(aggregateDefinition.aggregateType())));
+                                        .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                        .eventBus(c.eventBus())
+                                        .repositoryProvider(c::repository)
+                                        .lockFactory(c.getComponent(LockFactory.class, () -> NullLockFactory.INSTANCE))
+                                        .parameterResolverFactory(c.parameterResolverFactory())
+                                        .handlerDefinition(c.handlerDefinition(aggregateDefinition.aggregateType()))
+                                        .build());
                     }
                 }
             }
@@ -936,16 +902,17 @@ public class AxonCdiExtension implements Extension {
             if (!sagaDefinition.explicitConfiguration()
                     && !sagaConfigurationProducerMap.containsKey(sagaDefinition.configurationName())) {
 
-                SagaConfiguration<?> sagaConfiguration = SagaConfiguration
-                        .subscribingSagaManager(sagaDefinition.sagaType());
+                EventProcessingConfigurer cfgr = configurer.eventProcessing();
+
+                //TODO Make sure a SubscribingEventProcessor is used
+                cfgr.registerSaga(sagaDefinition.sagaType());
+                final SagaConfigurer<?> sagaConfigurer = SagaConfigurer.forType(sagaDefinition.sagaType());
 
                 afterBeanDiscovery.addBean(new BeanWrapper<>(sagaDefinition.configurationName(),
-                        SagaConfiguration.class,
-                        () -> sagaConfiguration));
+                        SagaConfigurer.class, () -> sagaConfigurer));
                 sagaDefinition.sagaStore()
-                        .ifPresent(sagaStore -> sagaConfiguration
+                        .ifPresent(sagaStore -> sagaConfigurer
                         .configureSagaStore(c -> produce(beanManager, sagaStoreProducerMap.get(sagaStore))));
-                configurer.registerModule(sagaConfiguration);
             }
         });
     }
