@@ -1,6 +1,6 @@
 package org.axonframework.cdi.example.javaee.command;
 
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 public class CreateAccountCommand {
 

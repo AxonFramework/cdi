@@ -1,16 +1,16 @@
 package org.axonframework.cdi.example.javase;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.inject.Inject;
 import org.axonframework.cdi.example.javase.command.CreateAccountCommand;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.interceptors.EventLoggingInterceptor;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 
-import java.util.concurrent.TimeUnit;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.inject.Inject;
 
 @ApplicationScoped
 public class AccountApplication {
@@ -27,8 +27,8 @@ public class AccountApplication {
     public void run() {
         eventBus.registerDispatchInterceptor(new EventLoggingInterceptor());
         commandGateway.sendAndWait(new CreateAccountCommand("4711", 1000D));
-        queryGateway.send("4711", Double.class, 1, TimeUnit.SECONDS)
-                .forEach(System.out::println);
+        queryGateway.query("4711", ResponseTypes.instanceOf(Double.class)/*, 1, TimeUnit.SECONDS*/)
+        .thenAccept(System.out::println);
     }
 
     public static void main(final String[] args) {

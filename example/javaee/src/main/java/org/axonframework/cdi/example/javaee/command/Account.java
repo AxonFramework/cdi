@@ -1,13 +1,15 @@
 package org.axonframework.cdi.example.javaee.command;
 
+import org.axonframework.cdi.stereotype.Aggregate;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.modelling.command.AggregateIdentifier;
+
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.axonframework.cdi.stereotype.Aggregate;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.model.AggregateIdentifier;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+
+import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
 @Aggregate
 public class Account {

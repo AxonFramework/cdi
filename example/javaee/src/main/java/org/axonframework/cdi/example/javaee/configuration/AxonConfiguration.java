@@ -37,7 +37,7 @@ public class AxonConfiguration implements Serializable {
     @ApplicationScoped
     public EntityManager entityManager() {
         try {
-            return (EntityManager) new InitialContext().lookup("java:comp/env/accounts/entitymanager");
+            return (EntityManager) new InitialContext().lookup("java:/accounts");//"java:comp/env/accounts/entitymanager");
         } catch (NamingException ex) {
             logger.log(Level.SEVERE, "Failed to look up entity manager.", ex);
         }
@@ -74,7 +74,10 @@ public class AxonConfiguration implements Serializable {
     public EventStorageEngine eventStorageEngine(
             EntityManagerProvider entityManagerProvider,
             TransactionManager transactionManager) {
-        return new JpaEventStorageEngine(entityManagerProvider, transactionManager);
+        return JpaEventStorageEngine.builder()
+                .entityManagerProvider(entityManagerProvider)
+                .transactionManager(transactionManager)
+                .build();
     }
 
     /**
@@ -86,7 +89,10 @@ public class AxonConfiguration implements Serializable {
     @ApplicationScoped
     public TokenStore tokenStore(EntityManagerProvider entityManagerProvider,
             Serializer serializer) {
-        return new JpaTokenStore(entityManagerProvider, serializer);
+        return JpaTokenStore.builder()
+            .entityManagerProvider(entityManagerProvider)
+                .serializer(serializer)
+                .build();
     }
 
     /**
@@ -97,6 +103,6 @@ public class AxonConfiguration implements Serializable {
     @Produces
     @ApplicationScoped
     public Serializer serializer() {
-        return new JacksonSerializer();
+        return JacksonSerializer.builder().build();
     }
 }
