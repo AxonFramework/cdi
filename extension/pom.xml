@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <name>Axon Framework CDI Support</name>
     <description>Provides official Axon support for the CDI programming model.</description>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-cdi</artifactId>
-    <version>4.0-SNAPSHOT</version>
+    <version>4.0-alpha1</version>
     <inceptionYear>2018</inceptionYear>
     <url>https://github.com/AxonFramework/cdi</url>
 
@@ -203,7 +201,7 @@
         <connection>scm:git:git://github.com/AxonFramework/cdi.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/cdi.git</developerConnection>
         <url>https://github.com/AxonFramework/cdi</url>
-        <tag>HEAD</tag>
+        <tag>axon-cdi-4.0-alpha1</tag>
     </scm>
     
     <developers>
