@@ -66,3 +66,6 @@ example/javaee/nb-configuration.xml
 example/javaee/nbactions.xml
 example/javase/nbactions.xml
 example/javaee/src/main/webapp/META-INF/context.xml
+
+/.metadata/
+/.recommenders/

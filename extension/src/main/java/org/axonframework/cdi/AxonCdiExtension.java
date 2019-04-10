@@ -87,7 +87,7 @@ public class AxonCdiExtension implements Extension {
     private Producer<Serializer> messageSerializerProducer;
     private Producer<EventBus> eventBusProducer;
     private Producer<CommandBus> commandBusProducer;
-//     private Producer<CommandGateway> commandGatewayProducer;
+    private Producer<CommandGateway> commandGatewayProducer;
     private Producer<Configurer> configurerProducer;
     private Producer<TransactionManager> transactionManagerProducer;
     private Producer<EntityManagerProvider> entityManagerProviderProducer;
@@ -130,7 +130,7 @@ public class AxonCdiExtension implements Extension {
             final ProcessAnnotatedType<T> processAnnotatedType) {
         // TODO Aggregate classes may need to be vetoed so that CDI does not
         // actually try to manage them.
-        
+
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
         logger.debug("Found aggregate: {}.", clazz);
@@ -139,7 +139,7 @@ public class AxonCdiExtension implements Extension {
     }
 
     // Mark: Same issues with the stuff below. A bit ugly but functional. I may
-    // be able to get rid of most fo this by doing BeanManager look ups right 
+    // be able to get rid of most fo this by doing BeanManager look ups right
     // after afterBeanDiscovery or later.
     <T> void processAggregateRepositoryProducer(
             @Observes final ProcessProducer<T, Repository> processProducer) {
@@ -172,8 +172,8 @@ public class AxonCdiExtension implements Extension {
     <T> void processSaga(@Observes @WithAnnotations({Saga.class})
             final ProcessAnnotatedType<T> processAnnotatedType) {
         // TODO Saga classes may need to be vetoed so that CDI does not
-        // actually try to manage them.        
-        
+        // actually try to manage them.
+
         final Class<?> clazz = processAnnotatedType.getAnnotatedType().getJavaClass();
 
         logger.debug("Found saga: {}.", clazz);
@@ -188,7 +188,7 @@ public class AxonCdiExtension implements Extension {
      */
     // Mark: I know these seem especially frivolous and looks like they may be
     // replaced with post deployment look-ups or injection of some kind.
-    // Unfortunately I don't think it is that straightforwards for reasons 
+    // Unfortunately I don't think it is that straightforwards for reasons
     // explained a bit later. That said, I do want to discuss these with you.
     <T> void processEventStorageEngineProducer(
             @Observes final ProcessProducer<T, EventStorageEngine> processProducer) {
@@ -310,15 +310,15 @@ public class AxonCdiExtension implements Extension {
         this.commandBusProducer = processProducer.getProducer();
     }
 
-//    <T> void processCommandGatewayProducer(
-//            @Observes final ProcessProducer<T, CommandGateway> processProducer) {
-//        // TODO Handle multiple producer definitions.
-//
-//        logger.debug("Producer for command gateway found: {}.",
-//                processProducer.getProducer());
-//
-//        this.commandGatewayProducer = processProducer.getProducer();
-//    }
+    <T> void processCommandGatewayProducer(
+            @Observes final ProcessProducer<T, CommandGateway> processProducer) {
+        // TODO Handle multiple producer definitions.
+
+        logger.debug("Producer for command gateway found: {}.",
+                processProducer.getProducer());
+
+        this.commandGatewayProducer = processProducer.getProducer();
+    }
 
     /**
      * Scans for an entity manager provider producer.
@@ -474,7 +474,7 @@ public class AxonCdiExtension implements Extension {
      */
     // Mark: This one is especally tricky. I am looking for the existance
     // of annotations and methods and collecting bean definitions.
-    // I suspect this is the most efficient way to do this and I can use 
+    // I suspect this is the most efficient way to do this and I can use
     // the bean defenitions to look up via BeanManager later.
     //X @struberg it's fine. Although I would use processBean.getAnnotated() instead of bean.getBeanClass() in the 'inspect' code
     //X I'fe quickly fixed this method. Please verify if it works as expected. And you still need to change the tests to AnnotatedType!
@@ -496,7 +496,7 @@ public class AxonCdiExtension implements Extension {
         Configurer configurer;
 
         if (this.configurerProducer != null) {
-            // Mark: this is one of the biggest headaches I am facing. What I 
+            // Mark: this is one of the biggest headaches I am facing. What I
             // need is the actual bean instance that I need to move forward with.
             // Right now what I am doing is just having the producer create it.
             // The problem with this is that CDI and the Java EE runtime is just
@@ -507,13 +507,13 @@ public class AxonCdiExtension implements Extension {
 
             // In addition, the
             // bean may be referencing definitions I have not had a chance
-            // to register with CDI yet since they can only be produced after the 
+            // to register with CDI yet since they can only be produced after the
             // Axon configuration is done.
-            // 
-            // The only solution I can think of is register any bean 
+            //
+            // The only solution I can think of is register any bean
             // definitions I've detected I absolutely need and avoid actual
             // bean reference until later, create the beans like configurer
-            // that I say in the API cannot have circular dependencies and move the 
+            // that I say in the API cannot have circular dependencies and move the
             // configuration steps itself to be as lazily loaded as possible.
             // Can you think of a better strategy to deal with this problem?
             configurer = produce(beanManager, configurerProducer);
@@ -745,7 +745,7 @@ public class AxonCdiExtension implements Extension {
 
         logger.info("Registering Axon APIs with CDI.");
 
-        
+
         // Mark: This is one of the key parts that is forcing me to do anything at all
         // in the afterBeanDiscovery phase. Once the Axon configuration completes,
         // including taking into account user defined overrides, I need to bind some
@@ -764,19 +764,19 @@ public class AxonCdiExtension implements Extension {
 
         //
         // That said, you'll notice the lambdas below that are my effort to defer
-        // actual instantiation to as late as possible. The only other way I can 
+        // actual instantiation to as late as possible. The only other way I can
         // think of to defer actual bean referencing any further is by using
         // byte code proxies that look up bean references on each method call.
         // Can you think of a better way to further defer the actual configution start and
         // bean referencing?
-        // 
+        //
         // Even with this deferring, I am running into issues like EJBs not
         // instantiated and JPA registries not done yet on certain containers like
         // Payara. When I refer to application scoped beans at this stage, it seems I am gettting
         // my own copy and then the application creates another copy when the
         // application code actually bootstraps. All related to referncing beans too
         // early I believe.
-        
+
         afterBeanDiscovery.addBean(
                 new BeanWrapper<>(Configuration.class, () -> startConfiguration(configurer)));
         // Mark: I tried removing some of this code in favor of globally enabled alternatives.
@@ -786,6 +786,9 @@ public class AxonCdiExtension implements Extension {
         // similar to this unless you know of a way.
         addIfNotConfigured(CommandBus.class, commandBusProducer,
                 () -> CdiUtilities.getReference(beanManager, Configuration.class).commandBus(),
+                afterBeanDiscovery);
+        addIfNotConfigured(CommandGateway.class, commandGatewayProducer,
+                () -> CdiUtilities.getReference(beanManager, Configuration.class).commandGateway(),
                 afterBeanDiscovery);
         addIfNotConfigured(QueryBus.class, queryBusProducer,
                 () -> CdiUtilities.getReference(beanManager, Configuration.class).queryBus(),
