@@ -9,16 +9,10 @@
         registration APIs. This will confuse most users. -->
     <!-- TODO Double-check that this is a complete list -->
 
-    <class>org.axonframework.eventhandling.AbstractEventEntry</class>
-    <class>org.axonframework.eventhandling.AbstractDomainEventEntry</class>
-    <class>org.axonframework.eventhandling.AbstractSequencedDomainEventEntry</class>
     <class>org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry</class>
-    <class>org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry</class>
     <class>org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry</class>
-    <class>org.axonframework.eventhandling.tokenstore.AbstractTokenEntry</class>
     <class>org.axonframework.eventhandling.tokenstore.jpa.TokenEntry</class>
     <class>org.axonframework.modelling.saga.repository.jpa.AssociationValueEntry</class>
-    <class>org.axonframework.modelling.saga.repository.jpa.AbstractSagaEntry</class>
     <class>org.axonframework.modelling.saga.repository.jpa.SagaEntry</class>
     <properties>
       <property name="jboss.entity.manager.jndi.name" value="java:/accounts"/>
